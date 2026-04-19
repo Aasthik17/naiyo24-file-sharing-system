@@ -169,19 +169,32 @@ def generate_presigned_url(
 ) -> str:
     """Generate a presigned download URL for a stored file."""
     bucket = bucket or settings.S3_BUCKET_NAME
+
+    # For MinIO, we must strictly sign with the exact external-facing endpoint,
+    # otherwise S3v4 Signatures will fail due to a Host header mismatch.
+    if settings.STORAGE_BACKEND == "minio" and settings.CDN_BASE_URL:
+        external_endpoint = settings.CDN_BASE_URL.rsplit("/", 1)[0]
+        client_for_presigning = boto3.client(
+            "s3",
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_REGION,
+            config=BotoConfig(signature_version="s3v4"),
+            endpoint_url=external_endpoint,
+        )
+        return client_for_presigning.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": bucket, "Key": key},
+            ExpiresIn=expires_in,
+        )
+
+    # Generic S3 Fallback
     client = get_s3_client()
-    url = client.generate_presigned_url(
+    return client.generate_presigned_url(
         "get_object",
         Params={"Bucket": bucket, "Key": key},
         ExpiresIn=expires_in,
     )
-    # MinIO fix: replace internal Docker hostname with external-facing URL
-    if settings.STORAGE_BACKEND == "minio" and settings.CDN_BASE_URL:
-        # Presigned URL from MinIO contains the internal endpoint,
-        # we replace the base with CDN_BASE_URL for external access.
-        minio_internal = settings.MINIO_ENDPOINT
-        url = url.replace(minio_internal, settings.CDN_BASE_URL.rsplit("/", 1)[0])
-    return url
 
 
 def get_file_stream(key: str, bucket: str = None):
