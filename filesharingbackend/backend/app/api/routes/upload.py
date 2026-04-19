@@ -194,3 +194,35 @@ async def list_files(
         files=[FileResponse.model_validate(f) for f in files],
         total=len(files),
     )
+
+
+# ── POST /simple — simple single-file upload ─────────────────────────────────
+@router.post(
+    "/simple",
+    summary="Simple single-file upload for demo purposes",
+)
+async def simple_upload(
+    file: UploadFile = File(...),
+):
+    from app.services.storage_service import get_s3_client, ensure_bucket_exists, generate_presigned_url
+    from app.utils.file_utils import generate_storage_filename
+    from app.core.config import settings
+    
+    ensure_bucket_exists()
+    
+    safe_filename = file.filename
+    storage_filename = generate_storage_filename(safe_filename)
+    
+    key = f"uploads/simple/{storage_filename}"
+    
+    client = get_s3_client()
+    file_data = await file.read()
+    client.put_object(
+        Bucket=settings.S3_BUCKET_NAME,
+        Key=key,
+        Body=file_data,
+        ContentType=file.content_type,
+    )
+    
+    url = generate_presigned_url(key)
+    return {"link": url}
