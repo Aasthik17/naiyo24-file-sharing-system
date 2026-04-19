@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import '../providers/file_provider.dart';
+import '../providers/auth_provider.dart';
 
 class UploadScreen extends ConsumerWidget {
   const UploadScreen({super.key});
@@ -15,6 +16,14 @@ class UploadScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text("File Sharing"),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              ref.read(authProvider.notifier).logout();
+            },
+          )
+        ],
       ),
       body: Center(
         child: Column(
@@ -30,21 +39,15 @@ class UploadScreen extends ConsumerWidget {
               },
               child: const Text("Choose File"),
             ),
-
-            if (fileState.filePath != null)
-              Text(fileState.filePath!),
-
+            if (fileState.filePath != null) Text(fileState.filePath!),
             const SizedBox(height: 20),
-
             fileState.loading
                 ? const CircularProgressIndicator()
                 : ElevatedButton(
-              onPressed: notifier.upload,
-              child: const Text("Upload"),
-            ),
-
+                    onPressed: notifier.upload,
+                    child: const Text("Upload"),
+                  ),
             const SizedBox(height: 20),
-
             if (fileState.link != null) ...[
               const Text("Share Link:"),
               SelectableText(fileState.link!),
