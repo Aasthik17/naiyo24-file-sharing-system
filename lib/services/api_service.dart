@@ -5,7 +5,7 @@ class ApiService {
   late final Dio _dio;
 
   ApiService() {
-    String baseUrl = "http://192.168.1.133:8000";
+    String baseUrl = "http://10.12.85.40:8000";
     _dio = Dio(BaseOptions(baseUrl: baseUrl));
 
     _dio.interceptors.add(InterceptorsWrapper(
