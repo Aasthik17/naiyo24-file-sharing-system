@@ -37,7 +37,7 @@ def generate_storage_filename(original_filename: str) -> str:
     return f"{timestamp}_{unique_id}{ext}"
 
 
-def generate_share_token(length: int = 32) -> str:
+def generate_share_token(length: int = 8) -> str:
     """Generate a cryptographically secure share token."""
     return secrets.token_urlsafe(length)
 
