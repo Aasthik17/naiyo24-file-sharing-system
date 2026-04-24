@@ -1,7 +1,7 @@
 """
 Upload routes — create upload session, upload chunks, finalize, check progress, cancel.
 """
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -26,6 +26,7 @@ from app.services.upload_service import (
     get_upload_progress,
     cancel_upload,
 )
+from app.services.share_service import create_share_link
 from app.utils.logger import get_logger
 from sqlalchemy import select
 
@@ -202,19 +203,22 @@ async def list_files(
     summary="Simple single-file upload for demo purposes",
 )
 async def simple_upload(
+    request: Request,
     file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    from app.services.storage_service import get_s3_client, ensure_bucket_exists, generate_presigned_url
+    from app.services.storage_service import get_s3_client, ensure_bucket_exists
     from app.utils.file_utils import generate_storage_filename
     from app.core.config import settings
-    
+
     ensure_bucket_exists()
-    
+
     safe_filename = file.filename
     storage_filename = generate_storage_filename(safe_filename)
-    
+
     key = f"uploads/simple/{storage_filename}"
-    
+
     client = get_s3_client()
     file_data = await file.read()
     client.put_object(
@@ -223,6 +227,26 @@ async def simple_upload(
         Body=file_data,
         ContentType=file.content_type,
     )
-    
-    url = generate_presigned_url(key)
-    return {"link": url}
+
+    file_record = FileModel(
+        filename=storage_filename,
+        original_filename=safe_filename,
+        size=len(file_data),
+        mime_type=file.content_type,
+        storage_url=key,
+        uploaded_by=current_user.id,
+    )
+    db.add(file_record)
+    await db.flush()
+    await db.refresh(file_record)
+
+    share = await create_share_link(
+        db=db,
+        file_id=file_record.id,
+        user_id=current_user.id,
+    )
+
+    base_url = str(request.base_url).rstrip("/")
+    share_url = f"{base_url}/api/download/{share.token}"
+
+    return {"link": share_url}

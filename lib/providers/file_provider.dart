@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/api_service.dart';
 
-final fileProvider =
-StateNotifierProvider<FileNotifier, FileState>((ref) {
+final fileProvider = StateNotifierProvider<FileNotifier, FileState>((ref) {
   return FileNotifier();
 });
 
@@ -13,11 +12,16 @@ class FileState {
 
   FileState({this.filePath, this.loading = false, this.link});
 
-  FileState copyWith({String? filePath, bool? loading, String? link}) {
+  FileState copyWith({
+    String? filePath,
+    bool? loading,
+    String? link,
+    bool clearLink = false,
+  }) {
     return FileState(
       filePath: filePath ?? this.filePath,
       loading: loading ?? this.loading,
-      link: link ?? this.link,
+      link: clearLink ? null : (link ?? this.link),
     );
   }
 }
@@ -28,13 +32,13 @@ class FileNotifier extends StateNotifier<FileState> {
   final api = ApiService();
 
   void setFile(String path) {
-    state = state.copyWith(filePath: path);
+    state = state.copyWith(filePath: path, clearLink: true);
   }
 
   Future<void> upload() async {
     if (state.filePath == null) return;
 
-    state = state.copyWith(loading: true);
+    state = state.copyWith(loading: true, clearLink: true);
 
     final link = await api.uploadFile(state.filePath!);
 

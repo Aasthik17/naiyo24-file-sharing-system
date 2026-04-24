@@ -65,8 +65,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(isLoading: false, isAuthenticated: true);
       return true;
     } catch (e) {
-      state = state.copyWith(
-          isLoading: false, errorMessage: "Invalid email or password");
+      final message =
+          e is ApiMessageException ? e.message : "Invalid email or password";
+      state = state.copyWith(isLoading: false, errorMessage: message);
       return false;
     }
   }
@@ -78,8 +79,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       return await login(email, password);
     } catch (e) {
-      state = state.copyWith(
-          isLoading: false, errorMessage: "Registration failed. Error: $e");
+      final message = e is ApiMessageException
+          ? e.message
+          : "Registration failed. Please try again.";
+      state = state.copyWith(isLoading: false, errorMessage: message);
       return false;
     }
   }
