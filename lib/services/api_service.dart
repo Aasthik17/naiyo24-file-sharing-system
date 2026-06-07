@@ -11,10 +11,16 @@ class ApiMessageException implements Exception {
 }
 
 class ApiService {
+  static const _defaultBaseUrl = 'http://192.168.1.6:8000';
+
   late final Dio _dio;
 
+  static String get baseUrl {
+    const envUrl = String.fromEnvironment('API_BASE_URL');
+    return envUrl.isNotEmpty ? envUrl : _defaultBaseUrl;
+  }
+
   ApiService() {
-    String baseUrl = "http://192.168.1.139:8000";
     _dio = Dio(BaseOptions(baseUrl: baseUrl));
 
     _dio.interceptors.add(InterceptorsWrapper(
