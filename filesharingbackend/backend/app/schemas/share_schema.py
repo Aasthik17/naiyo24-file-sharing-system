@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 class ShareCreateRequest(BaseModel):
     file_id: int
     expiry_hours: Optional[int] = Field(None, ge=1, le=720, description="Link expiry in hours (default from config)")
+    expiry_minutes: Optional[int] = Field(None, ge=10, le=60, description="Link expiry in minutes")
     password: Optional[str] = Field(None, min_length=4, max_length=128, description="Optional password protection")
     download_limit: Optional[int] = Field(None, ge=1, description="Max number of downloads allowed")
 

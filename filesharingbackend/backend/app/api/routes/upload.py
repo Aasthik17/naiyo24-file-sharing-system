@@ -205,6 +205,7 @@ async def list_files(
 async def simple_upload(
     request: Request,
     file: UploadFile = File(...),
+    expiry_minutes: int = Form(60, ge=10, le=60),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -244,9 +245,10 @@ async def simple_upload(
         db=db,
         file_id=file_record.id,
         user_id=current_user.id,
+        expiry_minutes=expiry_minutes,
     )
 
     base_url = str(request.base_url).rstrip("/")
     share_url = f"{base_url}/api/download/{share.token}"
 
-    return {"link": share_url}
+    return {"link": share_url, "expiry_time": share.expiry_time}

@@ -143,6 +143,13 @@ class UploadScreen extends ConsumerWidget {
                         ),
                 ),
                 SizedBox(height: compact ? 12 : 16),
+                _ExpirySliderCard(
+                  minutes: fileState.expiryMinutes,
+                  compact: compact,
+                  onChanged:
+                      fileState.loading ? null : notifier.setExpiryMinutes,
+                ),
+                SizedBox(height: compact ? 12 : 16),
                 GradientButton(
                   label: fileState.loading ? 'Uploading' : 'Upload now',
                   icon: Icons.arrow_upward_rounded,
@@ -169,6 +176,7 @@ class UploadScreen extends ConsumerWidget {
                       : _ShareLinkCard(
                           key: const ValueKey('share-link'),
                           link: fileState.link!,
+                          expiryMinutes: fileState.expiryMinutes,
                           compact: compact,
                         ),
                 ),
@@ -359,14 +367,141 @@ class _SelectedFileCard extends StatelessWidget {
   }
 }
 
+class _ExpirySliderCard extends StatelessWidget {
+  const _ExpirySliderCard({
+    required this.minutes,
+    required this.compact,
+    required this.onChanged,
+  });
+
+  final int minutes;
+  final bool compact;
+  final ValueChanged<int>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final boundedMinutes = _boundedExpiryMinutes(minutes);
+    final enabled = onChanged != null;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        compact ? 14 : 18,
+        compact ? 12 : 16,
+        compact ? 14 : 18,
+        compact ? 10 : 14,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        color: Colors.white.withValues(alpha: 0.06),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: compact ? 40 : 46,
+                height: compact ? 40 : 46,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: AppTheme.gold.withValues(alpha: 0.14),
+                ),
+                child: const Icon(
+                  Icons.timer_rounded,
+                  color: AppTheme.gold,
+                ),
+              ),
+              SizedBox(width: compact ? 12 : 14),
+              Expanded(
+                child: Text(
+                  'Link expiry',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: AppTheme.aqua.withValues(alpha: enabled ? 0.18 : 0.08),
+                  border: Border.all(
+                    color:
+                        AppTheme.aqua.withValues(alpha: enabled ? 0.24 : 0.1),
+                  ),
+                ),
+                child: Text(
+                  _expiryLabel(boundedMinutes),
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: enabled
+                            ? AppTheme.aqua
+                            : Colors.white.withValues(alpha: 0.48),
+                      ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: compact ? 4 : 8),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: AppTheme.aqua,
+              inactiveTrackColor: Colors.white.withValues(alpha: 0.16),
+              thumbColor: AppTheme.gold,
+              overlayColor: AppTheme.gold.withValues(alpha: 0.14),
+              valueIndicatorColor: AppTheme.surfaceStrong,
+              valueIndicatorTextStyle:
+                  Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Colors.white,
+                      ),
+            ),
+            child: Slider(
+              value: boundedMinutes.toDouble(),
+              min: minLinkExpiryMinutes.toDouble(),
+              max: maxLinkExpiryMinutes.toDouble(),
+              divisions: 5,
+              label: _expiryLabel(boundedMinutes),
+              onChanged: enabled
+                  ? (value) {
+                      onChanged!(value.round());
+                    }
+                  : null,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _expiryLabel(minLinkExpiryMinutes),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                Text(
+                  _expiryLabel(maxLinkExpiryMinutes),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ShareLinkCard extends StatelessWidget {
   const _ShareLinkCard({
     super.key,
     required this.link,
+    required this.expiryMinutes,
     required this.compact,
   });
 
   final String link;
+  final int expiryMinutes;
   final bool compact;
 
   @override
@@ -413,7 +548,7 @@ class _ShareLinkCard extends StatelessWidget {
                     if (!compact) ...[
                       const SizedBox(height: 4),
                       Text(
-                        'Compact route generated successfully.',
+                        'Expires in ${_expiryLabel(expiryMinutes)}.',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
@@ -526,4 +661,12 @@ String _basename(String path) {
 String _compactLink(String link) {
   if (link.length <= 52) return link;
   return '${link.substring(0, 34)}...${link.substring(link.length - 12)}';
+}
+
+int _boundedExpiryMinutes(int minutes) {
+  return minutes.clamp(minLinkExpiryMinutes, maxLinkExpiryMinutes);
+}
+
+String _expiryLabel(int minutes) {
+  return minutes == maxLinkExpiryMinutes ? '1 hr' : '$minutes min';
 }

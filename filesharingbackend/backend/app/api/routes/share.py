@@ -46,6 +46,7 @@ async def create_share(
             file_id=body.file_id,
             user_id=current_user.id,
             expiry_hours=body.expiry_hours,
+            expiry_minutes=body.expiry_minutes,
             password=body.password,
             download_limit=body.download_limit,
         )

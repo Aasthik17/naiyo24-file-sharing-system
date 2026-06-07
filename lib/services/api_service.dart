@@ -77,9 +77,10 @@ class ApiService {
     }
   }
 
-  Future<String> uploadFile(String path) async {
+  Future<String> uploadFile(String path, {required int expiryMinutes}) async {
     FormData formData = FormData.fromMap({
       "file": await MultipartFile.fromFile(path),
+      "expiry_minutes": expiryMinutes,
     });
 
     final response = await _dio.post("/api/upload/simple", data: formData);

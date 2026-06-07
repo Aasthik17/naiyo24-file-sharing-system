@@ -23,6 +23,7 @@ async def create_share_link(
     file_id: int,
     user_id: int,
     expiry_hours: Optional[int] = None,
+    expiry_minutes: Optional[int] = None,
     password: Optional[str] = None,
     download_limit: Optional[int] = None,
 ) -> Share:
@@ -43,8 +44,12 @@ async def create_share_link(
     token = generate_share_token()
 
     # Compute expiry
-    hours = expiry_hours or settings.SHARE_LINK_EXPIRY_HOURS
-    expiry_time = datetime.now(timezone.utc) + timedelta(hours=hours)
+    if expiry_minutes is not None:
+        expiry_delta = timedelta(minutes=expiry_minutes)
+    else:
+        hours = expiry_hours or settings.SHARE_LINK_EXPIRY_HOURS
+        expiry_delta = timedelta(hours=hours)
+    expiry_time = datetime.now(timezone.utc) + expiry_delta
 
     # Hash password if provided
     hashed_pw = hash_password(password) if password else None

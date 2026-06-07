@@ -89,6 +89,25 @@ class TestShareCreate:
         assert response.status_code == 201
 
     @patch("app.api.routes.share.create_share_link")
+    def test_create_share_with_expiry_minutes(self, mock_create, client):
+        mock_share = MagicMock(spec=Share)
+        mock_share.token = "minute_token"
+        mock_share.expiry_time = datetime.now(timezone.utc) + timedelta(minutes=30)
+        mock_share.download_limit = None
+        mock_create.return_value = mock_share
+
+        response = client.post(
+            "/api/share/create",
+            json={
+                "file_id": 1,
+                "expiry_minutes": 30,
+            },
+        )
+
+        assert response.status_code == 201
+        assert mock_create.call_args.kwargs["expiry_minutes"] == 30
+
+    @patch("app.api.routes.share.create_share_link")
     def test_create_share_file_not_found(self, mock_create, client):
         mock_create.side_effect = ValueError("File 999 not found")
 

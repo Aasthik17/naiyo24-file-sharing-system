@@ -203,6 +203,19 @@ class TestUploadCancel:
         assert response.json()["message"] == "Upload cancelled and cleaned up"
 
 
+class TestSimpleUpload:
+    """Test POST /api/upload/simple"""
+
+    def test_simple_upload_expiry_minutes_too_low(self, client):
+        response = client.post(
+            "/api/upload/simple",
+            data={"expiry_minutes": "5"},
+            files={"file": ("test.txt", io.BytesIO(b"data"), "text/plain")},
+        )
+
+        assert response.status_code == 422
+
+
 class TestChunkHandler:
     """Unit tests for chunk_handler utility functions."""
 
