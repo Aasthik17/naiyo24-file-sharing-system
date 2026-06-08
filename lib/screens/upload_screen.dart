@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_provider.dart';
@@ -75,28 +76,9 @@ class UploadScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Expanded(
-                      child: BrandWordmark(
-                        title: 'Naiyo24 Transfer',
-                        subtitle: 'Private upload workspace',
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    IconButton.filledTonal(
-                      onPressed: () {
-                        ref.read(authProvider.notifier).logout();
-                      },
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.08),
-                        foregroundColor: Colors.white,
-                      ),
-                      icon: const Icon(Icons.logout_rounded),
-                      tooltip: 'Logout',
-                    ),
-                  ],
+                const BrandWordmark(
+                  title: 'Naiyo24 Transfer',
+                  subtitle: 'Private upload workspace',
                 ),
                 SizedBox(height: compact ? 14 : 18),
                 const Wrap(
@@ -118,17 +100,17 @@ class UploadScreen extends ConsumerWidget {
                 _ChooseFileCard(
                   compact: compact,
                   onTap: () async {
-                    final result = await FilePicker.platform.pickFiles();
+                    final result = await FilePicker.platform.pickFiles(withData: kIsWeb);
 
-                    if (result != null && result.files.single.path != null) {
-                      notifier.setFile(result.files.single.path!);
+                    if (result != null && result.files.isNotEmpty) {
+                      notifier.setFile(result.files.single);
                     }
                   },
                 ),
                 SizedBox(height: compact ? 12 : 16),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 260),
-                  child: fileState.filePath == null
+                  child: fileState.file == null
                       ? _HintPlaceholder(
                           key: const ValueKey('empty-file'),
                           icon: Icons.folder_open_rounded,
@@ -138,7 +120,7 @@ class UploadScreen extends ConsumerWidget {
                         )
                       : _SelectedFileCard(
                           key: const ValueKey('selected-file'),
-                          filePath: fileState.filePath!,
+                          file: fileState.file!,
                           compact: compact,
                         ),
                 ),
@@ -150,10 +132,17 @@ class UploadScreen extends ConsumerWidget {
                       fileState.loading ? null : notifier.setExpiryMinutes,
                 ),
                 SizedBox(height: compact ? 12 : 16),
+                if (fileState.errorMessage != null) ...[
+                  InfoBanner(
+                    message: fileState.errorMessage!,
+                    icon: Icons.error_outline_rounded,
+                  ),
+                  SizedBox(height: compact ? 12 : 16),
+                ],
                 GradientButton(
                   label: fileState.loading ? 'Uploading' : 'Upload now',
                   icon: Icons.arrow_upward_rounded,
-                  onPressed: fileState.filePath == null || fileState.loading
+                  onPressed: fileState.file == null || fileState.loading
                       ? null
                       : () {
                           notifier.upload();
@@ -199,18 +188,31 @@ class UploadScreen extends ConsumerWidget {
                       ? Row(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Expanded(flex: 9, child: overviewPanel),
+                            Expanded(
+                              flex: 9,
+                              child: Center(
+                                child: SingleChildScrollView(
+                                  child: overviewPanel,
+                                ),
+                              ),
+                            ),
                             const SizedBox(width: 22),
                             Expanded(
                               flex: 11,
-                              child: Center(child: workspacePanel),
+                              child: Center(
+                                child: SingleChildScrollView(
+                                  child: workspacePanel,
+                                ),
+                              ),
                             ),
                           ],
                         )
                       : Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 620),
-                            child: workspacePanel,
+                          child: SingleChildScrollView(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 620),
+                              child: workspacePanel,
+                            ),
                           ),
                         ),
                 ),
@@ -307,16 +309,17 @@ class _ChooseFileCard extends StatelessWidget {
 class _SelectedFileCard extends StatelessWidget {
   const _SelectedFileCard({
     super.key,
-    required this.filePath,
+    required this.file,
     required this.compact,
   });
 
-  final String filePath;
+  final PlatformFile file;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final fileName = _basename(filePath);
+    final fileName = file.name;
+    final fileDetail = kIsWeb ? '${(file.size / 1024).toStringAsFixed(1)} KB' : (file.path ?? '${(file.size / 1024).toStringAsFixed(1)} KB');
 
     return Container(
       width: double.infinity,
@@ -353,7 +356,7 @@ class _SelectedFileCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  filePath,
+                  fileDetail,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium,
