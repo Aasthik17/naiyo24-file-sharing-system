@@ -1,0 +1,1212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Naiyo24 Transfer Technology Architecture Report</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #5e6b7c;
+      --line: #d8dee8;
+      --paper: #ffffff;
+      --soft: #f4f7fb;
+      --soft-blue: #eaf2fb;
+      --blue: #174a7c;
+      --teal: #087b78;
+      --green: #24734d;
+      --amber: #9a650c;
+      --red: #9a2f2f;
+      --shadow: rgba(18, 35, 56, 0.10);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: #f0f3f8;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.48;
+    }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+    }
+
+    @page {
+      size: Letter;
+      margin: 0.55in 0.58in 0.62in;
+    }
+
+    .page {
+      min-height: 9.55in;
+      padding: 0.05in 0 0;
+      break-after: page;
+      position: relative;
+    }
+
+    .page:last-child {
+      break-after: auto;
+    }
+
+    .cover {
+      display: flex;
+      min-height: 9.55in;
+      flex-direction: column;
+      justify-content: space-between;
+      padding-top: 0.1in;
+    }
+
+    .cover-band {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 30px 34px;
+      background:
+        linear-gradient(132deg, rgba(23, 74, 124, 0.96), rgba(8, 123, 120, 0.92)),
+        linear-gradient(180deg, #f9fbfe, #edf4fb);
+      color: #fff;
+      box-shadow: 0 18px 40px var(--shadow);
+    }
+
+    .eyebrow {
+      color: #b9ddec;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      margin: 0 0 14px;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, p {
+      margin-top: 0;
+    }
+
+    h1 {
+      font-size: 36px;
+      line-height: 1.04;
+      letter-spacing: 0;
+      margin-bottom: 16px;
+      max-width: 690px;
+    }
+
+    .subtitle {
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 15px;
+      line-height: 1.55;
+      max-width: 690px;
+      margin-bottom: 28px;
+    }
+
+    .metadata-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .metadata-card {
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 12px;
+      padding: 13px 14px;
+      background: rgba(255, 255, 255, 0.10);
+    }
+
+    .metadata-card strong,
+    .fact strong {
+      display: block;
+      color: inherit;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .metadata-card span {
+      display: block;
+      margin-top: 5px;
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 12px;
+    }
+
+    .summary-strip {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 16px;
+      margin-top: 22px;
+    }
+
+    .brief,
+    .panel,
+    .callout {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 10px 24px var(--shadow);
+    }
+
+    .brief {
+      padding: 20px 22px;
+    }
+
+    .brief h2 {
+      color: var(--blue);
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .brief p {
+      color: var(--muted);
+      margin-bottom: 0;
+    }
+
+    .fact-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .fact {
+      border-left: 4px solid var(--teal);
+      border-radius: 10px;
+      padding: 11px 13px;
+      background: var(--soft);
+    }
+
+    .fact span {
+      display: block;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      border-bottom: 2px solid var(--line);
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+    }
+
+    .section-title h2 {
+      color: var(--blue);
+      font-size: 22px;
+      line-height: 1.14;
+      margin: 0;
+    }
+
+    .section-title p {
+      color: var(--muted);
+      font-size: 11px;
+      margin: 0;
+      max-width: 330px;
+      text-align: right;
+    }
+
+    .diagram-wrap {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      background: linear-gradient(180deg, #fbfdff, #f5f8fc);
+      box-shadow: 0 12px 28px var(--shadow);
+    }
+
+    svg {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .caption {
+      color: var(--muted);
+      font-size: 10.5px;
+      margin: 10px 4px 0;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .legend-item {
+      align-items: center;
+      color: var(--muted);
+      display: flex;
+      font-size: 10.5px;
+      gap: 7px;
+    }
+
+    .swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 3px;
+      flex: 0 0 auto;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .panel {
+      padding: 16px 17px;
+    }
+
+    .panel h3 {
+      color: var(--blue);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .panel p {
+      color: var(--muted);
+      margin-bottom: 9px;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .tag {
+      border: 1px solid #cfd8e4;
+      border-radius: 999px;
+      color: #3f4f62;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 8px;
+      background: #f8fafc;
+    }
+
+    .stack-table,
+    .source-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+    }
+
+    .stack-table th,
+    .source-table th {
+      background: var(--blue);
+      color: #fff;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      padding: 8px 10px;
+      text-align: left;
+      text-transform: uppercase;
+    }
+
+    .stack-table td,
+    .source-table td {
+      border-bottom: 1px solid var(--line);
+      color: #3f4f62;
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .stack-table tr:nth-child(even) td,
+    .source-table tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    .stack-table td:first-child,
+    .source-table td:first-child {
+      color: var(--ink);
+      font-weight: 800;
+      width: 27%;
+    }
+
+    .source-table td:first-child {
+      width: 38%;
+    }
+
+    .flow {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .step {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .step-num {
+      align-items: center;
+      background: var(--soft-blue);
+      color: var(--blue);
+      display: flex;
+      font-weight: 900;
+      justify-content: center;
+    }
+
+    .step-body {
+      padding: 10px 12px;
+    }
+
+    .step-body strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .step-body span {
+      color: var(--muted);
+    }
+
+    .callout {
+      border-left: 5px solid var(--amber);
+      margin: 12px 0;
+      padding: 13px 15px;
+      background: #fff8eb;
+      box-shadow: none;
+    }
+
+    .callout strong {
+      color: #6d480a;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .callout p {
+      color: #6a5a3e;
+      margin-bottom: 0;
+    }
+
+    .bullets {
+      margin: 0;
+      padding-left: 17px;
+    }
+
+    .bullets li {
+      color: var(--muted);
+      margin: 5px 0;
+    }
+
+    .bullets strong {
+      color: var(--ink);
+    }
+
+    .model-diagram {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px;
+      background: #fbfdff;
+      margin-top: 8px;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 10.5px;
+    }
+
+    code {
+      color: #294b63;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+      font-weight: 700;
+    }
+
+    .compact-section {
+      margin-top: 14px;
+    }
+
+    .note-row {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .note {
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+    }
+
+    .note strong {
+      color: var(--blue);
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .note span {
+      color: var(--muted);
+    }
+
+    .footer-note {
+      color: #667386;
+      font-size: 10px;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="page cover">
+      <div class="cover-band">
+        <p class="eyebrow">Technology Architecture Report</p>
+        <h1>Naiyo24 Transfer File Sharing System</h1>
+        <p class="subtitle">
+          Professional architecture overview for the Flutter client, FastAPI backend,
+          object-storage layer, database model, background jobs, deployment topology,
+          and the current implementation boundaries found in the repository.
+        </p>
+        <div class="metadata-grid">
+          <div class="metadata-card">
+            <strong>Generated</strong>
+            <span>June 8, 2026</span>
+          </div>
+          <div class="metadata-card">
+            <strong>Repository</strong>
+            <span>naiyo24-file-sharing-system</span>
+          </div>
+          <div class="metadata-card">
+            <strong>Scope</strong>
+            <span>Source inspection and architecture documentation</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-strip">
+        <div class="brief">
+          <h2>Executive Summary</h2>
+          <p>
+            The application is a cross-platform file-transfer experience. The visible
+            Flutter client authenticates users, lets them select a file, chooses a
+            short expiry window, uploads through the API, and returns a copyable
+            share link. The backend is a Python FastAPI service that separates
+            authentication, upload, share, and download responsibilities behind
+            typed Pydantic schemas and SQLAlchemy data models.
+          </p>
+        </div>
+        <div class="fact-list">
+          <div class="fact">
+            <strong>Core Pattern</strong>
+            <span>Metadata in PostgreSQL, binaries in S3-compatible storage, transient upload state in Redis.</span>
+          </div>
+          <div class="fact">
+            <strong>Primary Stack</strong>
+            <span>Flutter, Riverpod, Dio, FastAPI, SQLAlchemy, PostgreSQL, Redis, Celery, MinIO/S3, Nginx.</span>
+          </div>
+          <div class="fact">
+            <strong>Current Client Path</strong>
+            <span>The Flutter UI calls <code>/api/upload/simple</code>; chunked upload endpoints are implemented on the backend.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="section-title">
+        <h2>System Architecture Diagram</h2>
+        <p>Logical runtime view of the deployed application and request/data flow.</p>
+      </div>
+
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 980 640" role="img" aria-label="Naiyo24 Transfer architecture diagram">
+          <defs>
+            <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#174a7c"></path>
+            </marker>
+            <marker id="arrowTeal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#087b78"></path>
+            </marker>
+            <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#24734d"></path>
+            </marker>
+            <style>
+              .lane { fill: #f5f8fc; stroke: #d8dee8; stroke-width: 1.2; }
+              .box { fill: #ffffff; stroke: #cdd7e5; stroke-width: 1.4; }
+              .client { fill: #eaf2fb; stroke: #8bb2d8; }
+              .edge { fill: #fdf6e8; stroke: #d9b66c; }
+              .api { fill: #eef7f6; stroke: #8cc4c0; }
+              .data { fill: #eff8f2; stroke: #93c4a6; }
+              .worker { fill: #f7eff8; stroke: #c69ad0; }
+              .title { font: 700 14px Inter, Arial, sans-serif; fill: #172033; }
+              .label { font: 700 12px Inter, Arial, sans-serif; fill: #172033; }
+              .tiny { font: 500 10px Inter, Arial, sans-serif; fill: #5e6b7c; }
+              .lane-title { font: 800 11px Inter, Arial, sans-serif; fill: #526072; letter-spacing: 0.08em; }
+              .arrow-b { fill: none; stroke: #174a7c; stroke-width: 2.4; marker-end: url(#arrowBlue); }
+              .arrow-t { fill: none; stroke: #087b78; stroke-width: 2.4; marker-end: url(#arrowTeal); }
+              .arrow-g { fill: none; stroke: #24734d; stroke-width: 2.4; marker-end: url(#arrowGreen); }
+            </style>
+          </defs>
+
+          <rect class="lane" x="22" y="28" width="936" height="110" rx="16"></rect>
+          <rect class="lane" x="22" y="154" width="936" height="220" rx="16"></rect>
+          <rect class="lane" x="22" y="392" width="936" height="194" rx="16"></rect>
+
+          <text class="lane-title" x="42" y="53">CLIENT AND EDGE</text>
+          <text class="lane-title" x="42" y="179">APPLICATION SERVICES</text>
+          <text class="lane-title" x="42" y="417">DATA, STORAGE, AND BACKGROUND WORK</text>
+
+          <rect class="box client" x="52" y="72" width="170" height="74" rx="12"></rect>
+          <text class="label" x="72" y="99">Flutter App</text>
+          <text class="tiny" x="72" y="118">Material UI, Riverpod</text>
+          <text class="tiny" x="72" y="132">Dio, file_picker, JWT</text>
+
+          <rect class="box client" x="260" y="72" width="170" height="74" rx="12"></rect>
+          <text class="label" x="280" y="99">Authenticated User</text>
+          <text class="tiny" x="280" y="118">Login/register</text>
+          <text class="tiny" x="280" y="132">Upload and copy link</text>
+
+          <rect class="box edge" x="496" y="72" width="170" height="74" rx="12"></rect>
+          <text class="label" x="516" y="99">Nginx</text>
+          <text class="tiny" x="516" y="118">/api proxy, /health</text>
+          <text class="tiny" x="516" y="132">rate limit, body limit</text>
+
+          <rect class="box client" x="742" y="72" width="170" height="74" rx="12"></rect>
+          <text class="label" x="762" y="99">Recipient</text>
+          <text class="tiny" x="762" y="118">Share info and download</text>
+          <text class="tiny" x="762" y="132">Presigned or direct stream</text>
+
+          <rect class="box api" x="68" y="210" width="200" height="106" rx="12"></rect>
+          <text class="label" x="88" y="238">FastAPI Entrypoint</text>
+          <text class="tiny" x="88" y="257">app.main lifespan</text>
+          <text class="tiny" x="88" y="272">CORS middleware</text>
+          <text class="tiny" x="88" y="287">/api router group</text>
+
+          <rect class="box api" x="314" y="204" width="322" height="120" rx="12"></rect>
+          <text class="label" x="334" y="232">API Routes</text>
+          <text class="tiny" x="334" y="252">/auth: register, login, me</text>
+          <text class="tiny" x="334" y="267">/upload: start, chunk, finalize, simple, list</text>
+          <text class="tiny" x="334" y="282">/share: create, info, my, revoke</text>
+          <text class="tiny" x="334" y="297">/download: redirect, direct stream, HEAD</text>
+
+          <rect class="box api" x="686" y="204" width="222" height="120" rx="12"></rect>
+          <text class="label" x="706" y="232">Service Layer</text>
+          <text class="tiny" x="706" y="252">upload_service</text>
+          <text class="tiny" x="706" y="267">share_service</text>
+          <text class="tiny" x="706" y="282">download_service</text>
+          <text class="tiny" x="706" y="297">storage_service</text>
+
+          <rect class="box data" x="62" y="448" width="194" height="98" rx="12"></rect>
+          <text class="label" x="82" y="475">PostgreSQL</text>
+          <text class="tiny" x="82" y="495">users, files, shares</text>
+          <text class="tiny" x="82" y="510">downloads metadata</text>
+          <text class="tiny" x="82" y="525">SQLAlchemy async</text>
+
+          <rect class="box data" x="304" y="448" width="194" height="98" rx="12"></rect>
+          <text class="label" x="324" y="475">Redis</text>
+          <text class="tiny" x="324" y="495">upload_session:* hashes</text>
+          <text class="tiny" x="324" y="510">TTL and progress state</text>
+          <text class="tiny" x="324" y="525">Celery broker/results</text>
+
+          <rect class="box data" x="546" y="448" width="194" height="98" rx="12"></rect>
+          <text class="label" x="566" y="475">MinIO / S3</text>
+          <text class="tiny" x="566" y="495">chunks and final objects</text>
+          <text class="tiny" x="566" y="510">multipart assembly</text>
+          <text class="tiny" x="566" y="525">presigned downloads</text>
+
+          <rect class="box worker" x="786" y="448" width="160" height="98" rx="12"></rect>
+          <text class="label" x="806" y="475">Celery</text>
+          <text class="tiny" x="806" y="495">cleanup tasks</text>
+          <text class="tiny" x="806" y="510">expired shares</text>
+          <text class="tiny" x="806" y="525">Flower monitor</text>
+
+          <path class="arrow-b" d="M 222 109 C 238 109 244 109 260 109"></path>
+          <path class="arrow-b" d="M 430 109 C 456 109 470 109 496 109"></path>
+          <path class="arrow-b" d="M 666 109 C 690 109 713 109 742 109"></path>
+          <path class="arrow-b" d="M 581 146 C 581 166 246 180 192 210"></path>
+          <path class="arrow-t" d="M 268 263 C 288 263 294 263 314 263"></path>
+          <path class="arrow-t" d="M 636 263 C 654 263 668 263 686 263"></path>
+          <path class="arrow-g" d="M 746 324 C 694 370 245 392 176 448"></path>
+          <path class="arrow-g" d="M 786 324 C 738 374 456 394 414 448"></path>
+          <path class="arrow-g" d="M 824 324 C 812 373 664 394 648 448"></path>
+          <path class="arrow-t" d="M 866 448 C 858 385 848 358 818 324"></path>
+          <path class="arrow-t" d="M 794 448 C 730 411 514 403 436 448"></path>
+        </svg>
+        <p class="caption">
+          Diagram describes the repository implementation: Docker Compose runs the backend,
+          PostgreSQL, Redis, MinIO, Nginx, Celery worker, and Flower. The Flutter client
+          is configured separately and reaches the backend through its API base URL.
+        </p>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item"><span class="swatch" style="background:#eaf2fb"></span>Client and users</div>
+        <div class="legend-item"><span class="swatch" style="background:#fdf6e8"></span>Edge gateway</div>
+        <div class="legend-item"><span class="swatch" style="background:#eef7f6"></span>Application service</div>
+        <div class="legend-item"><span class="swatch" style="background:#eff8f2"></span>Persistence and storage</div>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="section-title">
+        <h2>Technology Stack</h2>
+        <p>Exact technologies observed from project manifests, dependency files, and source code.</p>
+      </div>
+
+      <table class="stack-table">
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Technology</th>
+            <th>Role in the application</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Client application</td>
+            <td>Flutter, Dart SDK 3.2.5+, Material 3</td>
+            <td>Cross-platform UI for login, registration, upload selection, expiry configuration, and share-link display.</td>
+          </tr>
+          <tr>
+            <td>Client state</td>
+            <td>flutter_riverpod, shared_preferences</td>
+            <td>StateNotifier providers manage authentication and upload UI state; the JWT is persisted under <code>auth_token</code>.</td>
+          </tr>
+          <tr>
+            <td>Client networking</td>
+            <td>Dio, file_picker</td>
+            <td>Dio sends auth and upload requests with an Authorization interceptor; file_picker selects local files for upload.</td>
+          </tr>
+          <tr>
+            <td>Backend API</td>
+            <td>FastAPI, Uvicorn, Pydantic v2</td>
+            <td>Typed API routes, request/response schemas, form handling, file upload handling, and OpenAPI-compatible service structure.</td>
+          </tr>
+          <tr>
+            <td>Database</td>
+            <td>PostgreSQL 16, SQLAlchemy 2 async, asyncpg</td>
+            <td>Stores users, file metadata, share-link policy, and download audit records. Binary files are not stored in the database.</td>
+          </tr>
+          <tr>
+            <td>Object storage</td>
+            <td>boto3, MinIO/S3-compatible storage</td>
+            <td>Stores uploaded chunks and final files. The backend generates S3v4 presigned URLs and supports direct range streaming.</td>
+          </tr>
+          <tr>
+            <td>Transient state and jobs</td>
+            <td>Redis, Celery, Flower</td>
+            <td>Redis tracks chunked upload sessions and powers Celery broker/result storage; Flower exposes task monitoring.</td>
+          </tr>
+          <tr>
+            <td>Edge and deployment</td>
+            <td>Nginx, Docker Compose, Alembic</td>
+            <td>Nginx proxies <code>/api</code>, applies request limits, and exposes health. Compose defines local backend infrastructure.</td>
+          </tr>
+          <tr>
+            <td>Testing</td>
+            <td>pytest, pytest-asyncio, flutter_test</td>
+            <td>Backend route and utility tests use mocked dependencies; Flutter widget tests cover the unauthenticated app state and keyboard layout.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="grid-3 compact-section">
+        <div class="panel">
+          <h3>Separation of concerns</h3>
+          <p>The backend keeps route handlers thin. Routes delegate upload, sharing, download, and storage behavior to dedicated service modules.</p>
+          <div class="tag-row">
+            <span class="tag">app/api/routes</span>
+            <span class="tag">app/services</span>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Metadata versus files</h3>
+          <p>SQL tables track ownership and policy. File bytes live in object storage, reducing database pressure and enabling presigned downloads.</p>
+          <div class="tag-row">
+            <span class="tag">files.storage_url</span>
+            <span class="tag">S3 key</span>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Two upload modes</h3>
+          <p>The backend supports chunked sessions for larger uploads. The current Flutter UI uses the simple multipart endpoint for its visible flow.</p>
+          <div class="tag-row">
+            <span class="tag">/upload/simple</span>
+            <span class="tag">/upload/start</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="section-title">
+        <h2>Client Application Layer</h2>
+        <p>Flutter architecture and the UI-to-API contract used by the app.</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <h3>Application shell</h3>
+          <p>
+            <code>lib/main.dart</code> wraps the app in <code>ProviderScope</code>,
+            reads <code>authProvider</code>, and selects one of three first screens:
+            a loading view, <code>UploadScreen</code>, or <code>LoginScreen</code>.
+            The theme is defined centrally in <code>AppTheme.dark()</code>.
+          </p>
+          <ul class="bullets">
+            <li><strong>State:</strong> Riverpod StateNotifier providers expose immutable state objects.</li>
+            <li><strong>Persistence:</strong> <code>shared_preferences</code> stores the bearer token locally.</li>
+            <li><strong>Navigation:</strong> login/register replace the stack with the upload screen after success.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>API service</h3>
+          <p>
+            <code>lib/services/api_service.dart</code> creates one Dio client with a
+            base URL from <code>API_BASE_URL</code> at compile time, falling back to
+            a local network IP. An interceptor injects <code>Authorization: Bearer</code>
+            when a saved token exists.
+          </p>
+          <ul class="bullets">
+            <li><strong>Auth calls:</strong> <code>/api/auth/login</code> and <code>/api/auth/register</code>.</li>
+            <li><strong>Upload call:</strong> <code>/api/upload/simple</code> with multipart file and expiry minutes.</li>
+            <li><strong>Error handling:</strong> maps common API status codes to user-facing messages.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid-2 compact-section">
+        <div class="panel">
+          <h3>Authentication state</h3>
+          <p>
+            <code>AuthNotifier</code> checks for a saved token on startup, performs
+            login/register requests, writes the returned JWT, and clears it on
+            logout. This keeps the UI simple: screens react to the provider state.
+          </p>
+        </div>
+        <div class="panel">
+          <h3>File transfer state</h3>
+          <p>
+            <code>FileNotifier</code> tracks selected path, loading status, generated
+            link, and expiry minutes. The UI bounds expiry between 10 and 60 minutes,
+            then calls the API service to upload and receive the share URL.
+          </p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Current client implementation boundary</strong>
+        <p>
+          The backend implements chunked upload endpoints, but the current Flutter
+          upload workflow uses the simple single-file endpoint. This is important for
+          deployment planning because Nginx currently sets <code>client_max_body_size 10M</code>;
+          larger files should use the chunked flow or adjust edge limits.
+        </p>
+      </div>
+
+      <div class="section-title compact-section">
+        <h2>Backend API Layer</h2>
+        <p>FastAPI route groups, service responsibilities, and request validation.</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <h3>FastAPI app lifecycle</h3>
+          <p>
+            <code>app.main</code> starts a FastAPI application, applies CORS, mounts
+            <code>/api</code>, verifies database tables through SQLAlchemy metadata,
+            and attempts object-storage bucket initialization during lifespan startup.
+          </p>
+        </div>
+        <div class="panel">
+          <h3>Route groups</h3>
+          <p>
+            <code>app.api.router</code> mounts auth, upload, share, and download
+            routers. Each route uses Pydantic schemas for input/output and FastAPI
+            dependencies for authenticated user and database session injection.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="section-title">
+        <h2>Primary Workflows</h2>
+        <p>End-to-end behavior for authentication, upload, share-link creation, and download.</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <h3>Visible Flutter upload flow</h3>
+          <div class="flow">
+            <div class="step">
+              <div class="step-num">1</div>
+              <div class="step-body">
+                <strong>User authenticates</strong>
+                <span>The client submits email/password and stores the JWT returned from <code>/api/auth/login</code>.</span>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">2</div>
+              <div class="step-body">
+                <strong>User selects file and expiry</strong>
+                <span><code>file_picker</code> supplies a local path; expiry is constrained to 10-60 minutes.</span>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">3</div>
+              <div class="step-body">
+                <strong>Client posts multipart upload</strong>
+                <span><code>/api/upload/simple</code> uploads bytes to object storage, creates a file row, and creates a share row.</span>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">4</div>
+              <div class="step-body">
+                <strong>Share URL returns to UI</strong>
+                <span>The response includes <code>link</code> and <code>expiry_time</code>; the UI displays a copy button.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Backend chunked upload capability</h3>
+          <div class="flow">
+            <div class="step">
+              <div class="step-num">1</div>
+              <div class="step-body">
+                <strong>Start session</strong>
+                <span><code>/api/upload/start</code> validates size, calculates chunks, creates a Redis hash, and sets TTL.</span>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">2</div>
+              <div class="step-body">
+                <strong>Upload chunks</strong>
+                <span><code>/api/upload/chunk</code> validates owner/index and stores each chunk at an S3 key.</span>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">3</div>
+              <div class="step-body">
+                <strong>Finalize file</strong>
+                <span><code>/api/upload/finalize</code> verifies completeness and assembles the final object using S3 multipart upload.</span>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">4</div>
+              <div class="step-body">
+                <strong>Create metadata</strong>
+                <span>The route writes a <code>files</code> record with the final storage key and user ownership.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2 compact-section">
+        <div class="panel">
+          <h3>Share-link policy</h3>
+          <p>
+            <code>share_service</code> validates file ownership, generates a unique token,
+            computes expiry from minutes or hours, optionally hashes a password, and
+            stores download limits and counters in the <code>shares</code> table.
+          </p>
+          <ul class="bullets">
+            <li>Default expiry is configured as 72 hours.</li>
+            <li>Minute-based expiry supports 10-60 minutes.</li>
+            <li>Protected links use bcrypt-hashed passwords.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Download behavior</h3>
+          <p>
+            <code>download_service</code> validates token state, expiry, password,
+            active flag, and download limit. It then logs the request, increments
+            download count, and either redirects to a presigned object URL or streams
+            the object directly with HTTP range support.
+          </p>
+          <ul class="bullets">
+            <li><code>GET /api/download/{token}</code> returns a 307 redirect.</li>
+            <li><code>GET /api/download/{token}/direct</code> streams bytes.</li>
+            <li><code>HEAD /api/download/{token}</code> exposes size and range support.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="section-title">
+        <h2>Data Model and Storage</h2>
+        <p>Persistence model and object-storage ownership strategy.</p>
+      </div>
+
+      <div class="model-diagram">
+        <svg viewBox="0 0 930 310" role="img" aria-label="Data model diagram">
+          <defs>
+            <marker id="erdArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#174a7c"></path>
+            </marker>
+            <style>
+              .entity { fill: #ffffff; stroke: #cdd7e5; stroke-width: 1.4; }
+              .entityHead { fill: #174a7c; }
+              .entityTitle { font: 800 13px Inter, Arial, sans-serif; fill: #ffffff; }
+              .entityText { font: 500 10.5px Inter, Arial, sans-serif; fill: #526072; }
+              .rel { fill: none; stroke: #174a7c; stroke-width: 2.2; marker-end: url(#erdArrow); }
+              .relText { font: 800 10px Inter, Arial, sans-serif; fill: #174a7c; }
+            </style>
+          </defs>
+          <rect class="entity" x="28" y="48" width="180" height="190" rx="12"></rect>
+          <rect class="entityHead" x="28" y="48" width="180" height="34" rx="12"></rect>
+          <text class="entityTitle" x="48" y="70">users</text>
+          <text class="entityText" x="48" y="104">id PK</text>
+          <text class="entityText" x="48" y="123">email unique</text>
+          <text class="entityText" x="48" y="142">password hash</text>
+          <text class="entityText" x="48" y="161">is_active</text>
+          <text class="entityText" x="48" y="180">created_at</text>
+
+          <rect class="entity" x="280" y="36" width="206" height="214" rx="12"></rect>
+          <rect class="entityHead" x="280" y="36" width="206" height="34" rx="12"></rect>
+          <text class="entityTitle" x="300" y="58">files</text>
+          <text class="entityText" x="300" y="92">id PK</text>
+          <text class="entityText" x="300" y="111">filename, original_filename</text>
+          <text class="entityText" x="300" y="130">size, mime_type</text>
+          <text class="entityText" x="300" y="149">storage_url S3 key</text>
+          <text class="entityText" x="300" y="168">uploaded_by FK users.id</text>
+          <text class="entityText" x="300" y="187">is_deleted</text>
+          <text class="entityText" x="300" y="206">created_at</text>
+
+          <rect class="entity" x="556" y="36" width="194" height="214" rx="12"></rect>
+          <rect class="entityHead" x="556" y="36" width="194" height="34" rx="12"></rect>
+          <text class="entityTitle" x="576" y="58">shares</text>
+          <text class="entityText" x="576" y="92">id PK</text>
+          <text class="entityText" x="576" y="111">file_id FK files.id</text>
+          <text class="entityText" x="576" y="130">token unique</text>
+          <text class="entityText" x="576" y="149">expiry_time</text>
+          <text class="entityText" x="576" y="168">password hash optional</text>
+          <text class="entityText" x="576" y="187">download_limit/count</text>
+          <text class="entityText" x="576" y="206">is_active, created_at</text>
+
+          <rect class="entity" x="792" y="62" width="176" height="166" rx="12"></rect>
+          <rect class="entityHead" x="792" y="62" width="176" height="34" rx="12"></rect>
+          <text class="entityTitle" x="812" y="84">downloads</text>
+          <text class="entityText" x="812" y="118">id PK</text>
+          <text class="entityText" x="812" y="137">file_id FK files.id</text>
+          <text class="entityText" x="812" y="156">share_id FK shares.id</text>
+          <text class="entityText" x="812" y="175">ip_address, user_agent</text>
+          <text class="entityText" x="812" y="194">downloaded_at</text>
+
+          <path class="rel" d="M 208 142 C 238 142 250 142 280 142"></path>
+          <text class="relText" x="226" y="132">owns</text>
+          <path class="rel" d="M 486 142 C 516 142 526 142 556 142"></path>
+          <text class="relText" x="507" y="132">shared as</text>
+          <path class="rel" d="M 750 142 C 770 142 776 142 792 142"></path>
+          <text class="relText" x="754" y="132">logs</text>
+          <path class="rel" d="M 486 208 C 594 292 760 286 848 228"></path>
+          <text class="relText" x="620" y="286">download belongs to file</text>
+        </svg>
+      </div>
+
+      <div class="grid-2 compact-section">
+        <div class="panel">
+          <h3>Database responsibilities</h3>
+          <p>
+            PostgreSQL stores identities, ownership, object-storage keys, share
+            policy, and audit data. The async SQLAlchemy session dependency commits
+            successful request work and rolls back exceptions.
+          </p>
+          <ul class="bullets">
+            <li><strong>Users:</strong> unique email, password hash, active flag.</li>
+            <li><strong>Files:</strong> original name, generated name, size, MIME type, S3 key, owner.</li>
+            <li><strong>Shares:</strong> token, expiry, optional password, limits, active flag.</li>
+            <li><strong>Downloads:</strong> file/share references plus client IP and user agent.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Object-storage strategy</h3>
+          <p>
+            The storage service uses boto3 against S3 or MinIO. Chunks are stored
+            under <code>uploads/{user_id}/{upload_id}/chunks/{index}</code>. Final
+            files are assembled into <code>uploads/{user_id}/{upload_id}/{filename}</code>.
+          </p>
+          <ul class="bullets">
+            <li>Bucket creation is attempted during app startup and before uploads.</li>
+            <li>Multipart copy avoids loading every chunk into backend memory.</li>
+            <li>Presigned URLs expire after one hour for download redirects.</li>
+            <li>Range reads support resumable direct downloads.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Schema migration note</strong>
+        <p>
+          The checked-in Alembic initial migration is currently a placeholder with
+          no generated DDL. At runtime, <code>Base.metadata.create_all</code> verifies
+          and creates tables during FastAPI startup. For production, explicit Alembic
+          migrations should replace startup schema creation.
+        </p>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="section-title">
+        <h2>Security, Reliability, and Operations</h2>
+        <p>Security controls and operational mechanisms directly present in source code.</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <h3>Security controls</h3>
+          <ul class="bullets">
+            <li><strong>Password hashing:</strong> bcrypt via Passlib for user passwords and optional share-link passwords.</li>
+            <li><strong>JWT authentication:</strong> HS256 bearer tokens with configurable expiry, defaulting to 60 minutes.</li>
+            <li><strong>Ownership checks:</strong> upload sessions and share creation validate current-user ownership.</li>
+            <li><strong>Public download gates:</strong> token state, active flag, expiry, password, and download limit are validated.</li>
+            <li><strong>Filename handling:</strong> utility functions sanitize names and generate storage-safe unique identifiers.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Reliability controls</h3>
+          <ul class="bullets">
+            <li><strong>Database sessions:</strong> request-scoped async sessions commit, rollback, and close predictably.</li>
+            <li><strong>Redis TTL:</strong> upload sessions expire after the configured TTL and reset on chunk activity.</li>
+            <li><strong>Chunk cleanup:</strong> cancel and scheduled Celery tasks remove stale upload artifacts.</li>
+            <li><strong>Range downloads:</strong> direct streaming supports HTTP Range headers for resume-capable clients.</li>
+            <li><strong>Object-store retries:</strong> boto3 client config enables adaptive retry behavior.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid-2 compact-section">
+        <div class="panel">
+          <h3>Deployment topology</h3>
+          <p>
+            <code>filesharingbackend/docker-compose.yml</code> defines backend,
+            PostgreSQL, Redis, MinIO, Nginx, Celery worker, and Flower services on
+            a bridge network. The backend is served by Uvicorn on port 8000.
+          </p>
+          <ul class="bullets">
+            <li>Backend: <code>8000</code></li>
+            <li>Nginx: <code>80</code></li>
+            <li>PostgreSQL: <code>5432</code></li>
+            <li>Redis: <code>6379</code></li>
+            <li>MinIO API/console: <code>9000</code> / <code>9001</code></li>
+            <li>Flower: <code>5555</code></li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Nginx edge behavior</h3>
+          <p>
+            <code>nginx.conf</code> proxies <code>/api/</code> to the backend,
+            forwards client headers, exposes <code>/health</code>, applies
+            <code>100r/m</code> per-IP rate limiting, and configures extended
+            proxy timeouts for file-transfer requests.
+          </p>
+          <ul class="bullets">
+            <li><code>client_max_body_size 10M</code> is compatible with 5 MB chunks plus buffer.</li>
+            <li>Rate limit burst is set to 20 requests with no delay.</li>
+            <li>Proxy read/send timeout is 300 seconds for large transfers.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid-2 compact-section">
+        <div class="panel">
+          <h3>Background processing</h3>
+          <p>
+            Celery uses Redis as broker and result backend. Scheduled tasks deactivate
+            expired share links every hour and clean up nearly expired in-progress
+            upload sessions every 30 minutes.
+          </p>
+        </div>
+        <div class="panel">
+          <h3>Environment configuration</h3>
+          <p>
+            <code>pydantic-settings</code> centralizes app, database, Redis, object
+            storage, file-size, expiry, and CDN settings. Sensitive values such as
+            secret keys and access keys are expected from environment variables.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="section-title">
+        <h2>Implementation Notes and Source Map</h2>
+        <p>Precise boundaries, known considerations, and source evidence used for this report.</p>
+      </div>
+
+      <div class="note-row">
+        <div class="note">
+          <strong>Current UI is focused, not administrative.</strong>
+          <span>The Flutter screens expose authentication, file selection, expiry selection, upload, and copyable link output. Backend routes include additional share listing, file listing, revoke, progress, cancel, and direct-download capabilities.</span>
+        </div>
+        <div class="note">
+          <strong>Object storage is S3-compatible, with MinIO configured locally.</strong>
+          <span>Dependencies include boto3/botocore, and Compose includes a MinIO service. The code can target MinIO through <code>MINIO_ENDPOINT</code> or generic S3-style storage when configured differently.</span>
+        </div>
+        <div class="note">
+          <strong>Testing exists but is primarily mocked at the API boundary.</strong>
+          <span>Backend route tests patch service calls and dependency overrides. Flutter widget tests check initial unauthenticated rendering and keyboard behavior.</span>
+        </div>
+        <div class="note">
+          <strong>Documentation source is the codebase.</strong>
+          <span><code>README.md</code> is empty, so this PDF is based on direct inspection of implementation files, manifests, and tests.</span>
+        </div>
+      </div>
+
+      <table class="source-table compact-section">
+        <thead>
+          <tr>
+            <th>Source file</th>
+            <th>Evidence used</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>pubspec.yaml</code></td>
+            <td>Flutter dependencies: Dio, Riverpod, file_picker, shared_preferences, Google Fonts, and lints.</td>
+          </tr>
+          <tr>
+            <td><code>lib/main.dart</code>, <code>lib/providers/*</code>, <code>lib/services/api_service.dart</code></td>
+            <td>Client routing, auth persistence, API base URL, bearer-token interceptor, upload flow, and state model.</td>
+          </tr>
+          <tr>
+            <td><code>filesharingbackend/backend/app/main.py</code></td>
+            <td>FastAPI initialization, lifespan startup, CORS policy, router mounting, and health endpoint.</td>
+          </tr>
+          <tr>
+            <td><code>app/api/routes/*.py</code></td>
+            <td>Auth, upload, share, and download endpoint contracts and HTTP behavior.</td>
+          </tr>
+          <tr>
+            <td><code>app/services/*.py</code></td>
+            <td>Upload sessions, chunk assembly, S3/MinIO operations, share validation, presigned URLs, and direct streaming.</td>
+          </tr>
+          <tr>
+            <td><code>app/models/*.py</code></td>
+            <td>SQLAlchemy entities for users, files, shares, and downloads.</td>
+          </tr>
+          <tr>
+            <td><code>filesharingbackend/docker-compose.yml</code>, <code>nginx/nginx.conf</code></td>
+            <td>Container topology, service ports, dependency order, reverse proxy, rate limiting, and upload body limit.</td>
+          </tr>
+          <tr>
+            <td><code>backend/tests/*</code>, <code>test/widget_test.dart</code></td>
+            <td>Backend and Flutter test coverage areas.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="footer-note">
+        Prepared as a professional technical architecture PDF for the Naiyo24 Transfer
+        repository. No assumptions were taken from external documentation.
+      </p>
+    </section>
+  </main>
+</body>
+</html>
