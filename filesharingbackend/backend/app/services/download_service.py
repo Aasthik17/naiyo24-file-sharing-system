@@ -1,5 +1,6 @@
 """
 Download service — validate share access, serve files, and log downloads.
+Uses local filesystem storage (no S3/boto3).
 """
 from typing import Optional
 
@@ -10,7 +11,7 @@ from app.models.share import Share
 from app.models.file import File
 from app.services.share_service import validate_share_access, increment_download_count
 from app.services.storage_service import (
-    generate_presigned_url,
+    get_file_full_path,
     get_file_stream,
     get_file_stream_range,
 )
@@ -18,47 +19,6 @@ from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-
-async def process_download(
-    db: AsyncSession,
-    token: str,
-    password: Optional[str] = None,
-    ip_address: Optional[str] = None,
-    user_agent: Optional[str] = None,
-) -> dict:
-    """
-    Validate a share token, generate a presigned download URL,
-    log the download, and return download info.
-    """
-    share, file_obj = await validate_share_access(db, token, password)
-
-    # Generate presigned URL (1 hour expiry)
-    download_url = generate_presigned_url(file_obj.storage_url, expires_in=3600)
-
-    # Log download
-    download_log = Download(
-        file_id=file_obj.id,
-        share_id=share.id,
-        ip_address=ip_address,
-        user_agent=user_agent,
-    )
-    db.add(download_log)
-
-    # Increment counter
-    await increment_download_count(db, share)
-    await db.flush()
-
-    logger.info(
-        f"Download processed: file={file_obj.original_filename} "
-        f"share={token[:8]}... ip={ip_address}"
-    )
-
-    return {
-        "download_url": download_url,
-        "filename": file_obj.original_filename,
-        "file_size": file_obj.size,
-        "mime_type": file_obj.mime_type,
-    }
 
 
 async def get_direct_stream(
@@ -81,13 +41,13 @@ async def get_direct_stream(
 
     if range_start is not None:
         # Partial content (range request)
-        stream, content_length, content_range, total_size = get_file_stream_range(
+        file_handle, content_length, content_range, total_size = get_file_stream_range(
             key=storage_key,
             start_byte=range_start,
             end_byte=range_end,
         )
         result = {
-            "stream": stream,
+            "file_handle": file_handle,
             "content_length": content_length,
             "content_range": content_range,
             "total_size": total_size,
@@ -97,9 +57,9 @@ async def get_direct_stream(
         }
     else:
         # Full file
-        stream, content_length, content_type = get_file_stream(key=storage_key)
+        file_handle, content_length, content_type = get_file_stream(key=storage_key)
         result = {
-            "stream": stream,
+            "file_handle": file_handle,
             "content_length": content_length,
             "filename": file_obj.original_filename,
             "mime_type": file_obj.mime_type or "application/octet-stream",
