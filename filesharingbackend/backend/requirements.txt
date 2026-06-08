@@ -11,21 +11,16 @@ asyncpg==0.29.0
 alembic==1.13.1
 psycopg2-binary==2.9.9
 
-# Redis
+# Redis (optional — used for upload sessions if REDIS_ENABLED=True)
 redis==5.0.4
-aioredis==2.0.1
 
 # Auth
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
-bcrypt==3.2.2
+bcrypt==4.0.1
 python-multipart==0.0.9
 
-# Storage
-boto3
-botocore
-
-# Background Tasks
+# Background Tasks (optional — only needed with Celery in production)
 celery==5.4.0
 flower==2.0.1
 
