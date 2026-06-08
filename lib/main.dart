@@ -15,21 +15,10 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-
-    Widget homeWidget;
-    if (authState.isCheckingAuth) {
-      homeWidget = const LoadingView();
-    } else if (authState.isAuthenticated) {
-      homeWidget = const UploadScreen();
-    } else {
-      homeWidget = const LoginScreen();
-    }
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark(),
-      home: homeWidget,
+      home: const UploadScreen(),
     );
   }
 }
