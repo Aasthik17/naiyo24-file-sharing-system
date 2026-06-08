@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'providers/auth_provider.dart';
-import 'screens/login_screen.dart';
 import 'screens/upload_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/brand_kit.dart';
