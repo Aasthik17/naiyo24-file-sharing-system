@@ -1,0 +1,85 @@
+# Production compose — extends the dev docker-compose.yml with
+# Nginx (reverse proxy + rate limiting), Redis, Celery, and Flower.
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Make sure to set REDIS_ENABLED=True in backend/.env before using this.
+
+services:
+
+  # ── Override backend to depend on Redis ────────────────────────────────────
+  backend:
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: filesharesystem_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filesharenet
+
+  # ── Nginx (reverse proxy + rate limiting) ──────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: filesharesystem_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - filesharenet
+
+  # ── Celery Worker ────────────────────────────────────────────────────────────
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: filesharesystem_celery
+    restart: unless-stopped
+    env_file: ./backend/.env
+    volumes:
+      - upload_data:/app/uploads
+    depends_on:
+      - redis
+      - db
+    networks:
+      - filesharenet
+    command: celery -A app.workers.celery_worker worker --loglevel=info
+
+  # ── Celery Flower (monitoring dashboard) ───────────────────────────────────
+  flower:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: filesharesystem_flower
+    restart: unless-stopped
+    env_file: ./backend/.env
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+    networks:
+      - filesharenet
+    command: celery -A app.workers.celery_worker flower --port=5555
+
+volumes:
+  redis_data:
