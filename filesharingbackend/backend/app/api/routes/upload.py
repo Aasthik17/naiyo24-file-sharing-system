@@ -206,6 +206,7 @@ from fastapi import Request
 async def simple_upload(
     request: Request,
     file: UploadFile = File(...),
+    expiry_minutes: int = Form(default=30),
     db: AsyncSession = Depends(get_db),
 ):
     from app.services.storage_service import simple_upload_file, ensure_upload_dir
@@ -246,6 +247,7 @@ async def simple_upload(
         db=db,
         file_id=file_record.id,
         user_id=1,
+        expiry_minutes=expiry_minutes,
     )
 
     import urllib.parse
