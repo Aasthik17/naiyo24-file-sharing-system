@@ -1,7 +1,8 @@
 """
 Upload routes — create upload session, upload chunks, finalize, check progress, cancel.
+Also includes a simple single-file upload for quick demos.
 """
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form, Query, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -26,7 +27,6 @@ from app.services.upload_service import (
     get_upload_progress,
     cancel_upload,
 )
-from app.services.share_service import create_share_link
 from app.utils.logger import get_logger
 from sqlalchemy import select
 
@@ -197,58 +197,69 @@ async def list_files(
     )
 
 
-# ── POST /simple — simple single-file upload ─────────────────────────────────
+from fastapi import Request
+
 @router.post(
     "/simple",
-    summary="Simple single-file upload for demo purposes",
+    summary="Simple single-file upload (public for frontend)",
 )
 async def simple_upload(
     request: Request,
     file: UploadFile = File(...),
-    expiry_minutes: int = Form(60, ge=10, le=60),
-    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    from app.services.storage_service import get_s3_client, ensure_bucket_exists
-    from app.utils.file_utils import generate_storage_filename
-    from app.core.config import settings
+    from app.services.storage_service import simple_upload_file, ensure_upload_dir
+    from app.utils.file_utils import detect_mime_type
+    from app.services.share_service import create_share_link
 
-    ensure_bucket_exists()
+    ensure_upload_dir()
 
-    safe_filename = file.filename
-    storage_filename = generate_storage_filename(safe_filename)
-
-    key = f"uploads/simple/{storage_filename}"
-
-    client = get_s3_client()
     file_data = await file.read()
-    client.put_object(
-        Bucket=settings.S3_BUCKET_NAME,
-        Key=key,
-        Body=file_data,
-        ContentType=file.content_type,
-    )
+    file_size = len(file_data)
 
+    # Validate file size
+    from app.core.config import settings
+    if file_size > settings.MAX_FILE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File too large. Maximum allowed: {settings.MAX_FILE_SIZE_BYTES} bytes",
+        )
+
+    storage_key = simple_upload_file(file.filename, file_data)
+    mime_type = file.content_type or detect_mime_type(file.filename)
+
+    # Note: Using user_id=1 as the default owner for anonymous frontend uploads
     file_record = FileModel(
-        filename=storage_filename,
-        original_filename=safe_filename,
-        size=len(file_data),
-        mime_type=file.content_type,
-        storage_url=key,
-        uploaded_by=current_user.id,
+        filename=storage_key.split("/")[-1],
+        original_filename=file.filename,
+        size=file_size,
+        mime_type=mime_type,
+        storage_url=storage_key,
+        uploaded_by=1,
     )
     db.add(file_record)
     await db.flush()
     await db.refresh(file_record)
 
+    # Automatically create a share link for the frontend
     share = await create_share_link(
         db=db,
         file_id=file_record.id,
-        user_id=current_user.id,
-        expiry_minutes=expiry_minutes,
+        user_id=1,
     )
 
+    import urllib.parse
     base_url = str(request.base_url).rstrip("/")
-    share_url = f"{base_url}/api/download/{share.token}"
+    safe_filename = urllib.parse.quote(file_record.original_filename)
+    share_url = f"{base_url}/d/{safe_filename}?token={share.token}"
 
-    return {"link": share_url, "expiry_time": share.expiry_time}
+    logger.info(f"Simple upload: id={file_record.id} name={file.filename} link={share_url}")
+
+    return {
+        "file_id": file_record.id,
+        "filename": file_record.original_filename,
+        "size": file_record.size,
+        "storage_key": storage_key,
+        "message": "File uploaded successfully",
+        "link": share_url,
+    }

@@ -46,14 +46,21 @@ async def create_share(
             file_id=body.file_id,
             user_id=current_user.id,
             expiry_hours=body.expiry_hours,
-            expiry_minutes=body.expiry_minutes,
             password=body.password,
             download_limit=body.download_limit,
         )
 
-        # Build share URL
+        # Get original filename
+        from app.models.file import File
+        from sqlalchemy import select
+        file_result = await db.execute(select(File.original_filename).where(File.id == body.file_id))
+        filename = file_result.scalar_one()
+
+        # Build share URL (no /api/, includes filename)
+        import urllib.parse
         base_url = str(request.base_url).rstrip("/")
-        share_url = f"{base_url}/api/download/{share.token}"
+        safe_filename = urllib.parse.quote(filename)
+        share_url = f"{base_url}/d/{safe_filename}?token={share.token}"
 
         return ShareCreateResponse(
             share_token=share.token,
