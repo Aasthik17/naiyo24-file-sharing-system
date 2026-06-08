@@ -1,61 +1,56 @@
 # 📁 Naiyo24 File Sharing System
 
-A full-stack, cross-platform file sharing application built with **Flutter** (frontend) and **FastAPI** (backend). Users can register, log in, upload files, and share them via expiring short links — all served through a Docker-composed microservice stack.
+A full-stack, cross-platform file sharing application built with **Flutter** (frontend) and **FastAPI** (backend). Users can pick and upload any file — no login required — and instantly receive an expiring share link. The backend runs as a simple two-container Docker stack (FastAPI + PostgreSQL) with local disk storage.
 
 ---
 
 ## ✨ Features
 
-- 🔐 **JWT Authentication** — Secure register & login with token persistence
-- 📤 **File Upload** — Pick and upload any file via a native file picker
+- 📤 **No-Auth Upload** — Pick and upload any file instantly, no account needed
 - 🔗 **Expiring Share Links** — Generate short links with configurable expiry (10–60 minutes)
-- 📥 **File Download** — Download files via share links without authentication
+- 📥 **File Download** — Stream files directly via share link URL (no authentication)
+- 🔄 **HTTP Range Support** — Resume-download support via `Accept-Ranges` / `Range` headers
+- 🔒 **Optional Password Protection** — Share links can be password-protected
 - 🎨 **Dark-themed UI** — Custom brand design system with Google Fonts
-- ⚡ **Background Tasks** — Celery workers handle async processing (e.g. link cleanup)
-- 📊 **Task Monitoring** — Flower dashboard for Celery worker visibility
-- 🗄️ **Object Storage** — MinIO (S3-compatible) for file persistence
-- 🔄 **Nginx Reverse Proxy** — Routes all traffic through a single entry point
+- 💾 **Local Disk Storage** — Files persisted in a Docker volume (`/app/uploads`)
+- 🐳 **Docker-first** — One `docker compose up --build` starts everything
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────┐
-│         Flutter App (Client)         │
-│  Android · iOS · Web · Desktop      │
-└────────────────┬────────────────────┘
-                 │ HTTP / REST
-                 ▼
-┌─────────────────────────────────────┐
-│           Nginx (Port 80)            │  ← Reverse Proxy
-└────────────────┬────────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────────┐
-│       FastAPI Backend (Port 8000)    │
-│  /api/auth · /api/upload            │
-│  /api/share · /api/download         │
-└──────┬───────────────┬──────────────┘
-       │               │
-       ▼               ▼
-┌────────────┐  ┌─────────────┐
-│ PostgreSQL  │  │    Redis     │
-│ (Port 5432) │  │ (Port 6379)  │
-└────────────┘  └──────┬───────┘
-                        │
-                        ▼
-               ┌─────────────────┐
-               │  Celery Worker   │
-               │  + Flower :5555  │
-               └─────────────────┘
-                        │
-                        ▼
-               ┌─────────────────┐
-               │  MinIO Storage   │
-               │  API  :9000      │
-               │  UI   :9001      │
-               └─────────────────┘
+┌─────────────────────────────────────────┐
+│          Flutter App (Client)            │
+│   Android · iOS · Web · Desktop         │
+│                                         │
+│   UploadScreen                          │
+│     └─ FileProvider (Riverpod)          │
+│         └─ ApiService (Dio)             │
+└──────────────────┬──────────────────────┘
+                   │ HTTP / REST (Port 8000)
+                   ▼
+┌─────────────────────────────────────────┐
+│         FastAPI Backend                  │
+│                                         │
+│  POST /api/upload/simple   (no auth)    │
+│  POST /api/share/create    (auth req.)  │
+│  GET  /api/share/{token}/info           │
+│  GET  /api/download/{token}/{filename}  │
+│  GET  /health                           │
+└────────────┬────────────────────────────┘
+             │
+      ┌──────┴──────┐
+      ▼             ▼
+┌──────────────┐  ┌──────────────────────┐
+│  PostgreSQL  │  │  Local Disk          │
+│  (Port 5432) │  │  /app/uploads/       │
+│              │  │                      │
+│  users       │  │  files/simple/       │
+│  files       │  │  <uuid>_filename     │
+│  shares      │  │                      │
+│  downloads   │  └──────────────────────┘
+└──────────────┘
 ```
 
 ---
@@ -64,49 +59,50 @@ A full-stack, cross-platform file sharing application built with **Flutter** (fr
 
 ```
 naiyo24-file-sharing-system/
-├── lib/                          # Flutter frontend
-│   ├── main.dart                 # App entry point & routing
+├── lib/                              # Flutter frontend
+│   ├── main.dart                     # App entry point & routing
 │   ├── providers/
-│   │   ├── auth_provider.dart    # Authentication state (Riverpod)
-│   │   └── file_provider.dart    # File upload state (Riverpod)
+│   │   └── file_provider.dart        # File upload state (Riverpod)
 │   ├── screens/
-│   │   ├── login_screen.dart     # Login UI
-│   │   ├── register_screen.dart  # Registration UI
-│   │   └── upload_screen.dart    # File upload & share link UI
+│   │   └── upload_screen.dart        # Upload UI & share link display
 │   ├── services/
-│   │   └── api_service.dart      # Dio HTTP client
+│   │   └── api_service.dart          # Dio HTTP client (base URL config)
 │   ├── theme/
-│   │   └── app_theme.dart        # Dark theme definition
+│   │   └── app_theme.dart            # Dark theme definition
 │   └── widgets/
-│       └── brand_kit.dart        # Reusable UI components
+│       └── brand_kit.dart            # Reusable UI components
 │
 ├── test/
-│   └── widget_test.dart          # Widget tests
+│   └── widget_test.dart              # Widget tests
 │
-├── filesharingbackend/           # Backend services
-│   ├── docker-compose.yml        # Service orchestration
+├── filesharingbackend/               # Backend services
+│   ├── docker-compose.yml            # Service orchestration (backend + db)
 │   ├── nginx/
-│   │   └── nginx.conf            # Nginx config
+│   │   └── nginx.conf                # Reverse proxy config (optional)
 │   └── backend/
 │       ├── Dockerfile
 │       ├── requirements.txt
-│       ├── alembic.ini           # DB migration config
-│       ├── migrations/           # Alembic migration scripts
+│       ├── .env                      # Environment variables
+│       ├── alembic.ini               # DB migration config
+│       ├── migrations/               # Alembic migration scripts
 │       └── app/
-│           ├── main.py           # FastAPI app factory
+│           ├── main.py               # FastAPI app factory & lifespan
 │           ├── api/
-│           │   ├── router.py     # Root API router
+│           │   ├── router.py         # Root API router
 │           │   └── routes/
-│           │       ├── auth.py       # /api/auth
-│           │       ├── upload.py     # /api/upload
-│           │       ├── share.py      # /api/share
-│           │       └── download.py   # /api/download
-│           ├── core/             # Config, DB engine, security
-│           ├── models/           # SQLAlchemy ORM models
-│           ├── schemas/          # Pydantic request/response schemas
-│           ├── services/         # Business logic & storage service
-│           ├── workers/          # Celery tasks
-│           └── utils/            # Logging, helpers
+│           │       ├── upload.py     # POST /api/upload/simple
+│           │       ├── share.py      # POST /api/share/create · GET info · DELETE
+│           │       └── download.py   # GET /api/download/{token}/{filename}
+│           ├── core/                 # Config, DB engine, security, dependencies
+│           ├── models/               # SQLAlchemy ORM models (user, file, share, download)
+│           ├── schemas/              # Pydantic request/response schemas
+│           ├── services/             # Business logic & local storage
+│           │   ├── storage_service.py
+│           │   ├── upload_service.py
+│           │   ├── share_service.py
+│           │   └── download_service.py
+│           ├── workers/              # Background task utilities
+│           └── utils/                # Logging, file helpers
 │
 ├── pubspec.yaml
 └── analysis_options.yaml
@@ -117,26 +113,30 @@ naiyo24-file-sharing-system/
 ## 🧰 Tech Stack
 
 ### Frontend
-| Technology | Purpose |
-|---|---|
-| Flutter 3 (Dart ≥ 3.2.5) | Cross-platform UI framework |
-| flutter_riverpod `^2.5.1` | State management |
-| dio `^5.4.0` | HTTP client |
-| file_picker `^8.0.0` | Native file selection |
-| shared_preferences `^2.2.2` | JWT token persistence |
-| google_fonts `^6.3.2` | Typography |
+| Technology | Version | Purpose |
+|---|---|---|
+| Flutter (Dart) | ≥ 3.2.5 | Cross-platform UI framework |
+| flutter_riverpod | ^2.5.1 | State management |
+| dio | ^5.4.0 | HTTP client |
+| file_picker | ^8.0.0 | Native file selection |
+| google_fonts | ^6.3.2 | Typography |
 
 ### Backend
-| Technology | Purpose |
-|---|---|
-| FastAPI 0.111 | Async REST API |
-| SQLAlchemy 2 + asyncpg | Async ORM / PostgreSQL |
-| Alembic | Database migrations |
-| Redis + Celery | Background task queue |
-| Flower | Celery task monitoring |
-| MinIO (boto3) | S3-compatible file storage |
-| python-jose + passlib | JWT auth & password hashing |
-| Nginx | Reverse proxy |
+| Technology | Version | Purpose |
+|---|---|---|
+| FastAPI | 0.111.0 | Async REST API |
+| SQLAlchemy 2 + asyncpg | 2.0.30 / 0.29.0 | Async ORM / PostgreSQL |
+| Alembic | 1.13.1 | Database migrations |
+| aiofiles | 23.2.1 | Async local file I/O |
+| python-jose + passlib | 3.3.0 / 1.7.4 | JWT auth & password hashing |
+| uvicorn | 0.29.0 | ASGI server |
+
+### Infrastructure
+| Component | Image / Tool | Purpose |
+|---|---|---|
+| PostgreSQL | postgres:16-alpine | Relational database |
+| Docker Compose | — | Service orchestration |
+| Local Volume (`uploads_data`) | — | Persistent file storage |
 
 ---
 
@@ -155,11 +155,7 @@ naiyo24-file-sharing-system/
 ```bash
 cd filesharingbackend
 
-# Copy and configure environment variables
-cp backend/.env.example backend/.env
-# Edit backend/.env with your settings
-
-# Build and start all services
+# Build and start backend + database
 docker compose up --build -d
 ```
 
@@ -167,11 +163,8 @@ docker compose up --build -d
 
 | Service | URL |
 |---|---|
-| FastAPI (via Nginx) | http://localhost |
-| FastAPI (direct) | http://localhost:8000 |
-| FastAPI Swagger Docs | http://localhost:8000/docs |
-| MinIO Console | http://localhost:9001 |
-| Flower (Celery Monitor) | http://localhost:5555 |
+| FastAPI | http://localhost:8000 |
+| Swagger Docs | http://localhost:8000/docs |
 | Health Check | http://localhost:8000/health |
 
 ---
@@ -191,21 +184,15 @@ flutter run -d macos        # macOS desktop
 flutter run -d android      # Android device/emulator
 ```
 
-> **Note:** The app points to your backend host. Update the base URL in `lib/services/api_service.dart` if running on a physical device (replace `localhost` with your machine's local IP, e.g. `192.168.1.x`).
+> **Note:** Update the base URL in `lib/services/api_service.dart` if running on a physical device (replace `localhost` with your machine's local IP, e.g. `192.168.1.x:8000`).
 
 ---
 
 ### 3. Run Tests
 
 ```bash
-flutter test
-```
-
-All tests should pass with no analysis issues:
-
-```bash
-flutter analyze   # No issues found
-flutter test      # 2/2 tests passed
+flutter test       # Widget tests
+flutter analyze    # Static analysis
 ```
 
 ---
@@ -214,43 +201,63 @@ flutter test      # 2/2 tests passed
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `POST` | `/api/auth/register` | ❌ | Register a new user |
-| `POST` | `/api/auth/login` | ❌ | Login and receive JWT token |
-| `POST` | `/api/upload` | ✅ | Upload a file to MinIO |
-| `POST` | `/api/share` | ✅ | Create an expiring share link |
-| `GET` | `/api/download/{token}` | ❌ | Download file via share token |
+| `POST` | `/api/upload/simple` | ❌ | Upload a file; returns an expiring share link |
+| `POST` | `/api/share/create` | ✅ | Create a share link for an existing file |
+| `GET` | `/api/share/{token}/info` | ❌ | Get public info about a share link |
+| `GET` | `/api/share/my` | ✅ | List all share links for the current user |
+| `DELETE` | `/api/share/{token}` | ✅ | Revoke (deactivate) a share link |
+| `GET` | `/api/download/{token}/{filename}` | ❌ | Download file (filename shown in URL) |
+| `GET` | `/api/download/{token}` | ❌ | Download file via token (backward-compat) |
+| `HEAD` | `/api/download/{token}` | ❌ | File metadata for resume-download clients |
 | `GET` | `/health` | ❌ | Backend health check |
+
+> **Upload flow (primary):** `POST /api/upload/simple` — a single call that saves the file to disk, creates a DB record under a guest user, generates a share link, and returns `{ "link": "...", "expiry_time": "..." }`.
 
 ---
 
 ## ⚙️ Environment Variables
 
-Create `filesharingbackend/backend/.env` based on the following:
+`filesharingbackend/backend/.env`:
 
 ```env
 # App
-APP_NAME=FileSharingSystem
+APP_NAME=FileShareSystem
 APP_ENV=development
-DEBUG=true
-
-# Database
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/filesharingsystem
-
-# Redis
-REDIS_URL=redis://redis:6379/0
-
-# JWT
+DEBUG=True
 SECRET_KEY=your-secret-key-here
 ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+ACCESS_TOKEN_EXPIRE_MINUTES=60
 
-# MinIO
-MINIO_ENDPOINT=minio:9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
-MINIO_BUCKET_NAME=filesharingsystem
-MINIO_USE_SSL=false
+# Database
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=filesharingsystem
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/filesharingsystem
+
+# Local Storage
+UPLOAD_DIR=/app/uploads
+
+# File Settings
+MAX_FILE_SIZE_BYTES=5368709120   # 5 GB
+CHUNK_SIZE_BYTES=5242880         # 5 MB per chunk
+SHARE_LINK_EXPIRY_HOURS=72       # 3 days default
+UPLOAD_SESSION_TTL_SECONDS=3600  # 1 hour to complete upload
 ```
+
+---
+
+## 🗄️ Database Models
+
+| Model | Table | Key Fields |
+|---|---|---|
+| `User` | `users` | `id`, `email`, `password` |
+| `File` | `files` | `id`, `filename`, `original_filename`, `size`, `mime_type`, `storage_url`, `uploaded_by` |
+| `Share` | `shares` | `id`, `token`, `file_id`, `expiry_time`, `password`, `download_limit`, `download_count` |
+| `Download` | `downloads` | `id`, `share_id`, `ip_address`, `user_agent`, `downloaded_at` |
+
+> Files uploaded via `/api/upload/simple` are attributed to a built-in `guest@naiyo24.local` user to satisfy the FK constraint.
 
 ---
 
@@ -260,10 +267,10 @@ MINIO_USE_SSL=false
 # Enter the backend container
 docker exec -it filesharesystem_backend bash
 
-# Run migrations
+# Apply all migrations
 alembic upgrade head
 
-# Create a new migration
+# Create a new migration after model changes
 alembic revision --autogenerate -m "your migration message"
 ```
 
@@ -272,23 +279,23 @@ alembic revision --autogenerate -m "your migration message"
 ## 🧪 Backend Tests
 
 ```bash
-# Run pytest inside the backend container
 docker exec -it filesharesystem_backend pytest
 ```
 
 ---
 
-## 🐳 Docker Services Overview
+## 🐳 Docker Services
 
-| Container | Image | Port(s) |
-|---|---|---|
-| `filesharesystem_backend` | Custom (FastAPI) | 8000 |
-| `filesharesystem_db` | postgres:16-alpine | 5432 |
-| `filesharesystem_redis` | redis:7-alpine | 6379 |
-| `filesharesystem_minio` | minio/minio:latest | 9000, 9001 |
-| `filesharesystem_nginx` | nginx:alpine | 80 |
-| `filesharesystem_celery` | Custom (Celery worker) | — |
-| `filesharesystem_flower` | Custom (Flower) | 5555 |
+| Container | Image | Port(s) | Purpose |
+|---|---|---|---|
+| `filesharesystem_backend` | Custom (FastAPI + uvicorn) | 8000 | REST API |
+| `filesharesystem_db` | postgres:16-alpine | 5432 | Database |
+
+**Volumes:**
+- `postgres_data` → PostgreSQL data directory
+- `uploads_data` → `/app/uploads` inside the backend container (uploaded files)
+
+**Network:** Both services share the `filesharenet` bridge network.
 
 ---
 
