@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiMessageException implements Exception {
   const ApiMessageException(this.message);
@@ -11,7 +12,15 @@ class ApiMessageException implements Exception {
 }
 
 class ApiService {
-  static const _defaultBaseUrl = 'http://192.168.1.6:8000';
+  static String get _defaultBaseUrl {
+    if (kIsWeb) {
+      return 'http://127.0.0.1:8000';
+    }
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8000';
+    }
+    return 'http://127.0.0.1:8000';
+  }
 
   late final Dio _dio;
 
@@ -21,7 +30,10 @@ class ApiService {
   }
 
   ApiService() {
-    _dio = Dio(BaseOptions(baseUrl: baseUrl));
+    _dio = Dio(BaseOptions(
+      baseUrl: baseUrl,
+      connectTimeout: const Duration(seconds: 15),
+    ));
 
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
@@ -77,9 +89,23 @@ class ApiService {
     }
   }
 
-  Future<String> uploadFile(String path, {required int expiryMinutes}) async {
+  Future<String> uploadFile({
+    String? path,
+    List<int>? bytes,
+    String? filename,
+    required int expiryMinutes,
+  }) async {
+    MultipartFile multipartFile;
+    if (kIsWeb && bytes != null) {
+      multipartFile = MultipartFile.fromBytes(bytes, filename: filename ?? 'upload.file');
+    } else if (path != null) {
+      multipartFile = await MultipartFile.fromFile(path, filename: filename);
+    } else {
+      throw Exception('No file data provided');
+    }
+
     FormData formData = FormData.fromMap({
-      "file": await MultipartFile.fromFile(path),
+      "file": multipartFile,
       "expiry_minutes": expiryMinutes,
     });
 
