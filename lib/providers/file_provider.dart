@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
 
 const minLinkExpiryMinutes = 10;
@@ -10,30 +12,35 @@ final fileProvider = StateNotifierProvider<FileNotifier, FileState>((ref) {
 });
 
 class FileState {
-  final String? filePath;
+  final PlatformFile? file;
   final bool loading;
   final String? link;
   final int expiryMinutes;
+  final String? errorMessage;
 
   FileState({
-    this.filePath,
+    this.file,
     this.loading = false,
     this.link,
     this.expiryMinutes = defaultLinkExpiryMinutes,
+    this.errorMessage,
   });
 
   FileState copyWith({
-    String? filePath,
+    PlatformFile? file,
     bool? loading,
     String? link,
     int? expiryMinutes,
+    String? errorMessage,
     bool clearLink = false,
+    bool clearError = false,
   }) {
     return FileState(
-      filePath: filePath ?? this.filePath,
+      file: file ?? this.file,
       loading: loading ?? this.loading,
       link: clearLink ? null : (link ?? this.link),
       expiryMinutes: expiryMinutes ?? this.expiryMinutes,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }
@@ -43,8 +50,8 @@ class FileNotifier extends StateNotifier<FileState> {
 
   final api = ApiService();
 
-  void setFile(String path) {
-    state = state.copyWith(filePath: path, clearLink: true);
+  void setFile(PlatformFile newFile) {
+    state = state.copyWith(file: newFile, clearLink: true);
   }
 
   void setExpiryMinutes(int minutes) {
@@ -58,15 +65,22 @@ class FileNotifier extends StateNotifier<FileState> {
   }
 
   Future<void> upload() async {
-    if (state.filePath == null) return;
+    if (state.file == null) return;
 
-    state = state.copyWith(loading: true, clearLink: true);
+    state = state.copyWith(loading: true, clearLink: true, clearError: true);
 
-    final link = await api.uploadFile(
-      state.filePath!,
-      expiryMinutes: state.expiryMinutes,
-    );
+    try {
+      final link = await api.uploadFile(
+        path: kIsWeb ? null : state.file!.path,
+        bytes: state.file!.bytes,
+        filename: state.file!.name,
+        expiryMinutes: state.expiryMinutes,
+      );
 
-    state = state.copyWith(loading: false, link: link);
+      state = state.copyWith(loading: false, link: link);
+    } catch (e) {
+      state = state.copyWith(loading: false, errorMessage: "Upload failed: ${e.toString()}");
+      print("Upload failed: $e");
+    }
   }
 }
