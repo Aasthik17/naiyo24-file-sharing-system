@@ -2,6 +2,13 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 
+// ── Dev server host ───────────────────────────────────────────────────────────
+// When running on a physical device (Android or iOS), the phone cannot reach
+// 127.0.0.1 — that loopback address points to the phone itself.
+// Set this to your laptop's LAN IP (run `ipconfig getifaddr en0` on macOS).
+// This constant is only used when no API_BASE_URL env variable is set.
+const String _kDevLanHost = '192.168.1.6';
+
 class ApiMessageException implements Exception {
   const ApiMessageException(this.message);
 
@@ -14,11 +21,23 @@ class ApiMessageException implements Exception {
 class ApiService {
   static String get _defaultBaseUrl {
     if (kIsWeb) {
+      // Web runs in the browser on the same machine as the server.
       return 'http://127.0.0.1:8000';
     }
     if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8000';
+      // 10.0.2.2 is the Android EMULATOR host alias.
+      // For a real Android device on WiFi, use the laptop's LAN IP.
+      return kDebugMode
+          ? 'http://$_kDevLanHost:8000'
+          : 'http://127.0.0.1:8000';
     }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      // iOS simulator can use 127.0.0.1, but a real device needs the LAN IP.
+      return kDebugMode
+          ? 'http://$_kDevLanHost:8000'
+          : 'http://127.0.0.1:8000';
+    }
+    // macOS / Linux / Windows desktop — server is on the same machine.
     return 'http://127.0.0.1:8000';
   }
 
@@ -32,7 +51,9 @@ class ApiService {
   ApiService() {
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 15),
+      connectTimeout: const Duration(seconds: 30),
+      sendTimeout: const Duration(minutes: 2),
+      receiveTimeout: const Duration(minutes: 2),
     ));
 
     _dio.interceptors.add(InterceptorsWrapper(

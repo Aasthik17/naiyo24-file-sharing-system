@@ -251,7 +251,13 @@ async def simple_upload(
     )
 
     import urllib.parse
-    base_url = str(request.base_url).rstrip("/")
+    # Use the configurable public hostname if set, otherwise fall back to
+    # the request's actual host (which may be a raw LAN IP like 192.168.x.x).
+    base_url = (
+        settings.PUBLIC_BASE_URL.rstrip("/")
+        if settings.PUBLIC_BASE_URL
+        else str(request.base_url).rstrip("/")
+    )
     safe_filename = urllib.parse.quote(file_record.original_filename)
     share_url = f"{base_url}/d/{safe_filename}?token={share.token}"
 

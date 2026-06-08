@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
@@ -35,6 +36,12 @@ class Settings(BaseSettings):
     CHUNK_SIZE_BYTES: int = 5242880          # 5 MB
     SHARE_LINK_EXPIRY_HOURS: int = 72
     UPLOAD_SESSION_TTL_SECONDS: int = 3600
+
+    # Public URL — used to build share links instead of the raw request IP.
+    # Set this to your machine's mDNS name or any publicly reachable hostname.
+    # Example: http://Aasthiks-MacBook-Air.local:8000
+    # Leave unset to fall back to the request's host (default behaviour).
+    PUBLIC_BASE_URL: Optional[str] = None
 
     class Config:
         env_file = ".env"

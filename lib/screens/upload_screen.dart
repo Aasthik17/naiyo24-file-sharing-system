@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../providers/auth_provider.dart';
 import '../providers/file_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/brand_kit.dart';
@@ -589,13 +588,56 @@ class _ShareLinkCard extends StatelessWidget {
               color: Colors.black.withValues(alpha: 0.18),
               border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             ),
-            child: Text(
-              _compactLink(link),
-              maxLines: compact ? 1 : 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white,
-                  ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Filename row ──────────────────────────────────────────
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.insert_drive_file_rounded,
+                      size: 14,
+                      color: AppTheme.aqua,
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        _extractFilename(link),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // ── Token row ─────────────────────────────────────────────
+                Row(
+                  children: [
+                    Icon(
+                      Icons.key_rounded,
+                      size: 14,
+                      color: Colors.white.withValues(alpha: 0.45),
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        _extractToken(link),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.55),
+                          fontFamily: 'monospace',
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
@@ -656,14 +698,31 @@ class _HintPlaceholder extends StatelessWidget {
   }
 }
 
-String _basename(String path) {
-  final normalized = path.replaceAll('\\', '/');
-  return normalized.split('/').last;
+/// Extracts the filename from a share link of the form:
+///   http://host:port/d/{filename}?token=xxx
+String _extractFilename(String link) {
+  try {
+    final uri = Uri.parse(link);
+    final segments = uri.pathSegments;
+    // Path is /d/{filename} — filename is always the last segment.
+    if (segments.length >= 2 && segments[segments.length - 2] == 'd') {
+      return Uri.decodeComponent(segments.last);
+    }
+    // Fallback: show the last path segment.
+    if (segments.isNotEmpty) return Uri.decodeComponent(segments.last);
+  } catch (_) {}
+  return link;
 }
 
-String _compactLink(String link) {
-  if (link.length <= 52) return link;
-  return '${link.substring(0, 34)}...${link.substring(link.length - 12)}';
+/// Extracts the share token from a share link's query parameters.
+String _extractToken(String link) {
+  try {
+    final uri = Uri.parse(link);
+    final token = uri.queryParameters['token'] ?? '';
+    return token.isEmpty ? link : token;
+  } catch (_) {
+    return link;
+  }
 }
 
 int _boundedExpiryMinutes(int minutes) {
