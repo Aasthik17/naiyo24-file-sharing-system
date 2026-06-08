@@ -1,0 +1,51 @@
+
+services:
+
+  # ── FastAPI Backend ──────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: filesharesystem_backend
+    restart: unless-stopped
+    env_file: ./backend/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app          # hot reload in dev
+      - upload_data:/app/uploads  # persistent file storage
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - filesharenet
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ── PostgreSQL ───────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: filesharesystem_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: filesharingsystem
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - filesharenet
+
+volumes:
+  postgres_data:
+  upload_data:
+
+networks:
+  filesharenet:
+    driver: bridge
