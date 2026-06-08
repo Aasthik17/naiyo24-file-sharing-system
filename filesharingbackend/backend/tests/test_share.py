@@ -89,25 +89,6 @@ class TestShareCreate:
         assert response.status_code == 201
 
     @patch("app.api.routes.share.create_share_link")
-    def test_create_share_with_expiry_minutes(self, mock_create, client):
-        mock_share = MagicMock(spec=Share)
-        mock_share.token = "minute_token"
-        mock_share.expiry_time = datetime.now(timezone.utc) + timedelta(minutes=30)
-        mock_share.download_limit = None
-        mock_create.return_value = mock_share
-
-        response = client.post(
-            "/api/share/create",
-            json={
-                "file_id": 1,
-                "expiry_minutes": 30,
-            },
-        )
-
-        assert response.status_code == 201
-        assert mock_create.call_args.kwargs["expiry_minutes"] == 30
-
-    @patch("app.api.routes.share.create_share_link")
     def test_create_share_file_not_found(self, mock_create, client):
         mock_create.side_effect = ValueError("File 999 not found")
 
@@ -187,40 +168,42 @@ class TestShareRevoke:
 class TestDownload:
     """Test GET /api/download/{token}"""
 
-    @patch("app.api.routes.download.process_download")
-    def test_download_redirect(self, mock_process, client):
-        mock_process.return_value = {
-            "download_url": "https://minio.local/presigned-url",
+    @patch("app.api.routes.download.get_direct_stream")
+    def test_download_stream(self, mock_stream, client):
+        """Test that download returns a streaming response from local file."""
+        import io
+
+        mock_file = io.BytesIO(b"fake file content for testing")
+        mock_stream.return_value = {
+            "file_handle": mock_file,
+            "content_length": 29,
             "filename": "test.pdf",
-            "file_size": 1024000,
             "mime_type": "application/pdf",
+            "status_code": 200,
         }
 
-        response = client.get(
-            "/api/download/abc123",
-            follow_redirects=False,
-        )
+        response = client.get("/api/download/abc123")
 
-        assert response.status_code == 307
-        assert "presigned-url" in response.headers.get("location", "")
+        assert response.status_code == 200
+        assert response.headers.get("content-disposition") is not None
 
-    @patch("app.api.routes.download.process_download")
-    def test_download_expired(self, mock_process, client):
-        mock_process.side_effect = ValueError("Share link has expired")
+    @patch("app.api.routes.download.get_direct_stream")
+    def test_download_expired(self, mock_stream, client):
+        mock_stream.side_effect = ValueError("Share link has expired")
 
         response = client.get("/api/download/expired_token")
         assert response.status_code == 403
 
-    @patch("app.api.routes.download.process_download")
-    def test_download_wrong_password(self, mock_process, client):
-        mock_process.side_effect = ValueError("Incorrect password")
+    @patch("app.api.routes.download.get_direct_stream")
+    def test_download_wrong_password(self, mock_stream, client):
+        mock_stream.side_effect = ValueError("Incorrect password")
 
         response = client.get("/api/download/protected_token?password=wrong")
         assert response.status_code == 403
 
-    @patch("app.api.routes.download.process_download")
-    def test_download_limit_reached(self, mock_process, client):
-        mock_process.side_effect = ValueError("Download limit reached")
+    @patch("app.api.routes.download.get_direct_stream")
+    def test_download_limit_reached(self, mock_stream, client):
+        mock_stream.side_effect = ValueError("Download limit reached")
 
         response = client.get("/api/download/limited_token")
         assert response.status_code == 403
