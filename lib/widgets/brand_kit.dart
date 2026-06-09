@@ -1,28 +1,20 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
-
 import '../theme/app_theme.dart';
 
 class AuroraScaffold extends StatelessWidget {
-  const AuroraScaffold({
-    super.key,
-    required this.child,
-  });
-
+  const AuroraScaffold({super.key, required this.child});
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          const Positioned.fill(child: _AuroraBackdrop()),
-          SafeArea(child: child),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Scaffold(
+        body: Stack(
+          children: [
+            const Positioned.fill(child: _AuroraBackdrop()),
+            SafeArea(child: child),
+          ],
+        ),
+      );
 }
 
 class FrostPanel extends StatelessWidget {
@@ -38,38 +30,38 @@ class FrostPanel extends StatelessWidget {
   final double radius;
 
   @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(radius),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.16),
-                Colors.white.withValues(alpha: 0.06),
+  Widget build(BuildContext context) => ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            padding: padding,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(radius),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.16),
+                  Colors.white.withValues(alpha: 0.06),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.22),
+                  blurRadius: 32,
+                  offset: const Offset(0, 20),
+                ),
               ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.22),
-                blurRadius: 32,
-                offset: const Offset(0, 20),
-              ),
-            ],
+            child: child,
           ),
-          child: child,
         ),
-      ),
-    );
-  }
+      );
 }
+
+enum AppPillTone { coral, aqua, ink, custom }
 
 class AppPill extends StatelessWidget {
   const AppPill({
@@ -77,37 +69,47 @@ class AppPill extends StatelessWidget {
     required this.label,
     this.icon,
     this.tone = AppPillTone.coral,
+    this.customColors,
+    this.radius = 999,
+    this.boxShadow,
   });
 
   final String label;
   final IconData? icon;
   final AppPillTone tone;
+  final List<Color>? customColors;
+  final double radius;
+  final List<BoxShadow>? boxShadow;
 
   @override
   Widget build(BuildContext context) {
-    final colors = switch (tone) {
+    final colors = customColors ?? switch (tone) {
       AppPillTone.coral => [AppTheme.coral, AppTheme.gold],
       AppPillTone.aqua => [AppTheme.aqua, AppTheme.sky],
       AppPillTone.ink => [const Color(0xFF28425E), const Color(0xFF1B2F44)],
+      AppPillTone.custom => [Colors.white, Colors.white],
     };
+
+    final contentColor = tone == AppPillTone.ink ? Colors.white : AppTheme.ink;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(radius),
         gradient: LinearGradient(colors: colors),
+        boxShadow: boxShadow,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 15, color: AppTheme.ink),
+            Icon(icon, size: 15, color: contentColor),
             const SizedBox(width: 8),
           ],
           Text(
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppTheme.ink,
+                  color: contentColor,
                 ),
           ),
         ],
@@ -115,8 +117,6 @@ class AppPill extends StatelessWidget {
     );
   }
 }
-
-enum AppPillTone { coral, aqua, ink }
 
 class GradientButton extends StatelessWidget {
   const GradientButton({
@@ -141,15 +141,8 @@ class GradientButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         gradient: LinearGradient(
           colors: disabled
-              ? [
-                  Colors.white.withValues(alpha: 0.16),
-                  Colors.white.withValues(alpha: 0.08),
-                ]
-              : const [
-                  AppTheme.coral,
-                  AppTheme.gold,
-                  AppTheme.aqua,
-                ],
+              ? [Colors.white.withValues(alpha: 0.16), Colors.white.withValues(alpha: 0.08)]
+              : const [AppTheme.coral, AppTheme.gold, AppTheme.aqua],
         ),
         boxShadow: disabled
             ? const []
@@ -171,9 +164,7 @@ class GradientButton extends StatelessWidget {
           disabledForegroundColor: Colors.white.withValues(alpha: 0.5),
           shadowColor: Colors.transparent,
           minimumSize: const Size.fromHeight(60),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         ),
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 220),
@@ -219,7 +210,6 @@ class BrandWordmark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Row(
       children: [
         Container(
@@ -246,6 +236,7 @@ class BrandWordmark extends StatelessWidget {
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 title,
@@ -287,19 +278,17 @@ class BrandTextField extends StatelessWidget {
   final Widget? suffixIcon;
 
   @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      style: Theme.of(context).textTheme.bodyLarge,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        suffixIcon: suffixIcon,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        obscureText: obscureText,
+        style: Theme.of(context).textTheme.bodyLarge,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon),
+          suffixIcon: suffixIcon,
+        ),
+      );
 }
 
 class InfoBanner extends StatelessWidget {
@@ -315,39 +304,31 @@ class InfoBanner extends StatelessWidget {
   final Color backgroundColor;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: backgroundColor,
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: Colors.white),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white,
-                  ),
+  Widget build(BuildContext context) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: backgroundColor,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white),
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
+          ],
+        ),
+      );
 }
 
 class TransferIllustration extends StatelessWidget {
-  const TransferIllustration({
-    super.key,
-    this.height = 250,
-  });
-
+  const TransferIllustration({super.key, this.height = 250});
   final double height;
 
   @override
@@ -358,8 +339,6 @@ class TransferIllustration extends StatelessWidget {
     final showcaseCardRadius = showcaseCardSize * 0.24;
     final iconBoxSize = showcaseCardSize * 0.38;
     final lineHeight = showcaseCardSize * 0.07;
-    final lineLongWidth = showcaseCardSize * 0.58;
-    final lineShortWidth = showcaseCardSize * 0.42;
     final contentGap = showcaseCardSize * 0.08;
 
     return SizedBox(
@@ -367,19 +346,12 @@ class TransferIllustration extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Container(
-            width: primaryOrbSize,
-            height: primaryOrbSize,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  AppTheme.aqua.withValues(alpha: 0.42),
-                  AppTheme.sky.withValues(alpha: 0.18),
-                  Colors.transparent,
-                ],
-              ),
-            ),
+          _GlowOrb(
+            size: primaryOrbSize,
+            colors: [
+              AppTheme.aqua.withValues(alpha: 0.42),
+              AppTheme.sky.withValues(alpha: 0.18),
+            ],
           ),
           Container(
             width: secondaryOrbSize,
@@ -389,31 +361,55 @@ class TransferIllustration extends StatelessWidget {
               border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
             ),
           ),
-          const Positioned(
+          Positioned(
             left: 12,
             top: 28,
-            child: _MiniOrbCard(
-              icon: Icons.lock_rounded,
+            child: AppPill(
               label: 'Private',
-              colors: [AppTheme.sky, AppTheme.aqua],
+              icon: Icons.lock_rounded,
+              customColors: const [AppTheme.sky, AppTheme.aqua],
+              radius: 18,
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.sky.withValues(alpha: 0.18),
+                  blurRadius: 18,
+                  offset: const Offset(0, 10),
+                )
+              ],
             ),
           ),
-          const Positioned(
+          Positioned(
             right: 4,
             top: 72,
-            child: _MiniOrbCard(
-              icon: Icons.flash_on_rounded,
+            child: AppPill(
               label: 'Fast',
-              colors: [AppTheme.coral, AppTheme.gold],
+              icon: Icons.flash_on_rounded,
+              customColors: const [AppTheme.coral, AppTheme.gold],
+              radius: 18,
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.coral.withValues(alpha: 0.18),
+                  blurRadius: 18,
+                  offset: const Offset(0, 10),
+                )
+              ],
             ),
           ),
-          const Positioned(
+          Positioned(
             right: 18,
             bottom: 18,
-            child: _MiniOrbCard(
-              icon: Icons.link_rounded,
+            child: AppPill(
               label: 'Short link',
-              colors: [AppTheme.gold, AppTheme.aqua],
+              icon: Icons.link_rounded,
+              customColors: const [AppTheme.gold, AppTheme.aqua],
+              radius: 18,
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.gold.withValues(alpha: 0.18),
+                  blurRadius: 18,
+                  offset: const Offset(0, 10),
+                )
+              ],
             ),
           ),
           Transform.rotate(
@@ -450,9 +446,7 @@ class TransferIllustration extends StatelessWidget {
                       height: iconBoxSize,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(iconBoxSize * 0.3),
-                        gradient: const LinearGradient(
-                          colors: [AppTheme.coral, AppTheme.gold],
-                        ),
+                        gradient: const LinearGradient(colors: [AppTheme.coral, AppTheme.gold]),
                       ),
                       child: Icon(
                         Icons.file_present_rounded,
@@ -462,7 +456,7 @@ class TransferIllustration extends StatelessWidget {
                     ),
                     SizedBox(height: contentGap),
                     Container(
-                      width: lineLongWidth,
+                      width: showcaseCardSize * 0.58,
                       height: lineHeight,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(999),
@@ -471,7 +465,7 @@ class TransferIllustration extends StatelessWidget {
                     ),
                     SizedBox(height: contentGap * 0.55),
                     Container(
-                      width: lineShortWidth,
+                      width: showcaseCardSize * 0.42,
                       height: lineHeight,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(999),
@@ -514,8 +508,7 @@ class AuthScaffold extends StatelessWidget {
         builder: (context, constraints) {
           final isWide = constraints.maxWidth >= 930;
           final keyboardVisible = viewInsets.bottom > 0;
-          final fullHeight = constraints.maxHeight + viewInsets.bottom;
-          final isShort = fullHeight < 700;
+          final isShort = (constraints.maxHeight + viewInsets.bottom) < 700;
           final artHeight = isWide
               ? (constraints.maxHeight * 0.34).clamp(150.0, 220.0)
               : (constraints.maxHeight * 0.16).clamp(88.0, 112.0);
@@ -524,8 +517,7 @@ class AuthScaffold extends StatelessWidget {
             padding: EdgeInsets.all(isWide ? 8 : 0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment:
-                  isWide ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+              crossAxisAlignment: isWide ? CrossAxisAlignment.start : CrossAxisAlignment.center,
               children: [
                 const BrandWordmark(
                   title: 'Naiyo24 Transfer',
@@ -548,17 +540,14 @@ class AuthScaffold extends StatelessWidget {
                 if (highlights.isNotEmpty) ...[
                   SizedBox(height: isWide ? 18 : 12),
                   Wrap(
-                    alignment:
-                        isWide ? WrapAlignment.start : WrapAlignment.center,
+                    alignment: isWide ? WrapAlignment.start : WrapAlignment.center,
                     spacing: 10,
                     runSpacing: 10,
                     children: [
                       for (final item in highlights.take(isWide ? 3 : 2))
                         AppPill(
                           label: item,
-                          tone: item.contains('Fast')
-                              ? AppPillTone.coral
-                              : AppPillTone.aqua,
+                          tone: item.contains('Fast') ? AppPillTone.coral : AppPillTone.aqua,
                         ),
                     ],
                   ),
@@ -568,12 +557,7 @@ class AuthScaffold extends StatelessWidget {
           );
 
           final formPanel = FrostPanel(
-            padding: EdgeInsets.fromLTRB(
-              24,
-              isWide ? 26 : 22,
-              24,
-              isWide ? 28 : 22,
-            ),
+            padding: EdgeInsets.fromLTRB(24, isWide ? 26 : 22, 24, isWide ? 28 : 22),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -600,69 +584,40 @@ class AuthScaffold extends StatelessWidget {
 
           final horizontalPadding = isWide ? 36.0 : 18.0;
           final verticalPadding = isWide ? 24.0 : 16.0;
-          final availableHeight =
-              (constraints.maxHeight - (verticalPadding * 2)).clamp(
-            0.0,
-            double.infinity,
-          );
-
-          if (isWide) {
-            return Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: horizontalPadding,
-                vertical: verticalPadding,
-              ),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1120),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: double.infinity,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(flex: 10, child: hero),
-                        const SizedBox(width: 22),
-                        Expanded(
-                          flex: 9,
-                          child: Center(child: formPanel),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }
 
           return Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: horizontalPadding,
-              vertical: verticalPadding,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
             child: Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 520),
-                child: SingleChildScrollView(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: availableHeight),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: Column(
-                        mainAxisAlignment: keyboardVisible
-                            ? MainAxisAlignment.start
-                            : MainAxisAlignment.center,
+                constraints: BoxConstraints(maxWidth: isWide ? 1120 : 520),
+                child: isWide
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (!isShort) hero,
-                          if (!isShort) const SizedBox(height: 16),
-                          formPanel,
+                          Expanded(flex: 10, child: hero),
+                          const SizedBox(width: 22),
+                          Expanded(flex: 9, child: Center(child: formPanel)),
                         ],
+                      )
+                    : SingleChildScrollView(
+                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: (constraints.maxHeight - (verticalPadding * 2)).clamp(0.0, double.infinity),
+                          ),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: Column(
+                              mainAxisAlignment: keyboardVisible ? MainAxisAlignment.start : MainAxisAlignment.center,
+                              children: [
+                                if (!isShort) hero,
+                                if (!isShort) const SizedBox(height: 16),
+                                formPanel,
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
               ),
             ),
           );
@@ -676,163 +631,90 @@ class LoadingView extends StatelessWidget {
   const LoadingView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const AuroraScaffold(
-      child: Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              BrandWordmark(
-                title: 'Naiyo24 Transfer',
-                subtitle: 'Preparing your workspace',
-              ),
-              SizedBox(height: 28),
-              TransferIllustration(height: 210),
-              SizedBox(height: 24),
-              CircularProgressIndicator(),
-            ],
+  Widget build(BuildContext context) => const AuroraScaffold(
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                BrandWordmark(title: 'Naiyo24 Transfer', subtitle: 'Preparing your workspace'),
+                SizedBox(height: 28),
+                TransferIllustration(height: 210),
+                SizedBox(height: 24),
+                CircularProgressIndicator(),
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _MiniOrbCard extends StatelessWidget {
-  const _MiniOrbCard({
-    required this.icon,
-    required this.label,
-    required this.colors,
-  });
-
-  final IconData icon;
-  final String label;
-  final List<Color> colors;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: LinearGradient(colors: colors),
-        boxShadow: [
-          BoxShadow(
-            color: colors.first.withValues(alpha: 0.18),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: AppTheme.ink),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppTheme.ink,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
+      );
 }
 
 class _AuroraBackdrop extends StatelessWidget {
   const _AuroraBackdrop();
 
   @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF05111B),
-                Color(0xFF0A1A2B),
-                Color(0xFF102238),
-              ],
+  Widget build(BuildContext context) => Stack(
+        children: [
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF05111B), Color(0xFF0A1A2B), Color(0xFF102238)],
+              ),
+            ),
+            child: SizedBox.expand(),
+          ),
+          Positioned(
+            top: -120,
+            left: -90,
+            child: _GlowOrb(
+              size: 290,
+              colors: [AppTheme.coral.withValues(alpha: 0.9), AppTheme.gold.withValues(alpha: 0.45)],
             ),
           ),
-          child: SizedBox.expand(),
-        ),
-        Positioned(
-          top: -120,
-          left: -90,
-          child: _GlowOrb(
-            size: 290,
-            colors: [
-              AppTheme.coral.withValues(alpha: 0.9),
-              AppTheme.gold.withValues(alpha: 0.45),
-            ],
-          ),
-        ),
-        Positioned(
-          top: 120,
-          right: -90,
-          child: _GlowOrb(
-            size: 260,
-            colors: [
-              AppTheme.sky.withValues(alpha: 0.85),
-              AppTheme.aqua.withValues(alpha: 0.42),
-            ],
-          ),
-        ),
-        Positioned(
-          bottom: -160,
-          left: 40,
-          child: _GlowOrb(
-            size: 320,
-            colors: [
-              AppTheme.aqua.withValues(alpha: 0.7),
-              AppTheme.sky.withValues(alpha: 0.28),
-            ],
-          ),
-        ),
-        Positioned.fill(
-          child: IgnorePointer(
-            child: CustomPaint(
-              painter: _MeshPainter(),
+          Positioned(
+            top: 120,
+            right: -90,
+            child: _GlowOrb(
+              size: 260,
+              colors: [AppTheme.sky.withValues(alpha: 0.85), AppTheme.aqua.withValues(alpha: 0.42)],
             ),
           ),
-        ),
-      ],
-    );
-  }
+          Positioned(
+            bottom: -160,
+            left: 40,
+            child: _GlowOrb(
+              size: 320,
+              colors: [AppTheme.aqua.withValues(alpha: 0.7), AppTheme.sky.withValues(alpha: 0.28)],
+            ),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(painter: _MeshPainter()),
+            ),
+          ),
+        ],
+      );
 }
 
 class _GlowOrb extends StatelessWidget {
-  const _GlowOrb({
-    required this.size,
-    required this.colors,
-  });
-
+  const _GlowOrb({required this.size, required this.colors});
   final double size;
   final List<Color> colors;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [
-          colors.first,
-          colors.last,
-          Colors.transparent,
-        ]),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [colors.first, colors.last, Colors.transparent],
+          ),
+        ),
+      );
 }
 
 class _MeshPainter extends CustomPainter {
@@ -846,21 +728,21 @@ class _MeshPainter extends CustomPainter {
     final width = size.width;
     final height = size.height;
 
-    final arcOne = Path()
-      ..moveTo(width * 0.05, height * 0.28)
-      ..quadraticBezierTo(
-          width * 0.28, height * 0.14, width * 0.56, height * 0.24)
-      ..quadraticBezierTo(
-          width * 0.82, height * 0.34, width * 0.96, height * 0.16);
-    canvas.drawPath(arcOne, paint);
+    canvas.drawPath(
+      Path()
+        ..moveTo(width * 0.05, height * 0.28)
+        ..quadraticBezierTo(width * 0.28, height * 0.14, width * 0.56, height * 0.24)
+        ..quadraticBezierTo(width * 0.82, height * 0.34, width * 0.96, height * 0.16),
+      paint,
+    );
 
-    final arcTwo = Path()
-      ..moveTo(width * 0.02, height * 0.82)
-      ..quadraticBezierTo(
-          width * 0.28, height * 0.72, width * 0.44, height * 0.84)
-      ..quadraticBezierTo(
-          width * 0.74, height * 1.02, width * 0.98, height * 0.78);
-    canvas.drawPath(arcTwo, paint);
+    canvas.drawPath(
+      Path()
+        ..moveTo(width * 0.02, height * 0.82)
+        ..quadraticBezierTo(width * 0.28, height * 0.72, width * 0.44, height * 0.84)
+        ..quadraticBezierTo(width * 0.74, height * 1.02, width * 0.98, height * 0.78),
+      paint,
+    );
 
     final dashPaint = Paint()
       ..style = PaintingStyle.fill
