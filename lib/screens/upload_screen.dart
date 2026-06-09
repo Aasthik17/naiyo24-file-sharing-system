@@ -21,7 +21,6 @@ class UploadScreen extends ConsumerWidget {
         builder: (context, constraints) {
           final isWide = constraints.maxWidth >= 980;
           final compact = !isWide || constraints.maxHeight < 820;
-          final sp = compact ? 20.0 : 24.0; // spacing unit
 
           final overviewPanel = FrostPanel(
             padding: const EdgeInsets.all(24),
@@ -49,7 +48,7 @@ class UploadScreen extends ConsumerWidget {
           );
 
           final workspacePanel = FrostPanel(
-            padding: EdgeInsets.all(sp),
+            padding: EdgeInsets.all(compact ? 20 : 24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,28 +144,21 @@ class UploadScreen extends ConsumerWidget {
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1180),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: double.infinity,
-                  child: isWide
-                      ? Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              flex: 9,
-                              child: Center(child: SingleChildScrollView(child: overviewPanel)),
-                            ),
-                            const SizedBox(width: 22),
-                            Expanded(
-                              flex: 11,
-                              child: Center(child: SingleChildScrollView(child: workspacePanel)),
-                            ),
-                          ],
-                        )
-                      : Center(
+                child: isWide
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(flex: 9,  child: Center(child: SingleChildScrollView(child: overviewPanel))),
+                          const SizedBox(width: 22),
+                          Expanded(flex: 11, child: Center(child: SingleChildScrollView(child: workspacePanel))),
+                        ],
+                      )
+                    : SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 620),
                           child: workspacePanel,
                         ),
-                ),
+                      ),
               ),
             ),
           );
