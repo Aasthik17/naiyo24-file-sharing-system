@@ -50,19 +50,11 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to create upload directory: {e}")
         raise
 
-    # 3. Check Redis connection (if enabled)
-    if settings.REDIS_ENABLED:
-        try:
-            from app.services.upload_service import _get_redis
-            r = await _get_redis()
-            if r:
-                logger.info("Redis connection verified ✓")
-            else:
-                logger.warning("Redis enabled but connection failed — using in-memory fallback")
-        except Exception as e:
-            logger.warning(f"Redis check failed (will use in-memory fallback): {e}")
-    else:
-        logger.info("Redis disabled — using in-memory session store")
+
+    # 4. Log public base URL for share links
+    from app.core.config import get_public_base_url
+    public_url = get_public_base_url()
+    logger.info(f"Public base URL for share links: {public_url}")
 
     yield
 
@@ -79,24 +71,9 @@ app = FastAPI(
 )
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-# In DEBUG mode: allow all localhost / LAN origins so the Flutter web app
-# (served on e.g. http://localhost:52xxx) can reach the backend without CORS
-# errors. In production: restrict to the real domain.
-_DEBUG_ORIGINS = [
-    "http://localhost",
-    "http://127.0.0.1",
-    # Flutter web dev server uses a random high port — cover the full range
-    *[f"http://localhost:{p}" for p in range(3000, 65536)],
-    *[f"http://127.0.0.1:{p}" for p in range(3000, 65536)],
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_DEBUG_ORIGINS if settings.DEBUG else ["https://yourdomain.com"],
-    allow_origin_regex=(
-        # Also allow any LAN IP (192.168.x.x / 10.x / 172.16-31.x) on any port
-        r"http://(192\.168|10\.|172\.(1[6-9]|2\d|3[01]))\.\d+\.\d+(:\d+)?$"
-    ) if settings.DEBUG else None,
+    allow_origins=["*"] if settings.DEBUG else ["https://yourdomain.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
