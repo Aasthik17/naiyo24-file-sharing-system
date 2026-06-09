@@ -8,10 +8,10 @@ main          ← production only, protected
     ├── feature/auth          (Dev A — Day 2)
     ├── feature/storage       (Dev B — Day 2-3)
     ├── feature/upload        (Dev A — Day 4-5)
-    ├── feature/redis-session (Dev B — Day 4-5)
+
     ├── feature/share         (Dev A — Day 6)
     ├── feature/download      (Dev B — Day 6)
-    ├── feature/celery        (Dev A — Day 7)
+
     └── feature/devops        (Dev B — Day 7)
 ```
 
