@@ -31,8 +31,7 @@ class UploadScreen extends ConsumerWidget {
               children: [
                 const AppPill(label: 'Transfer studio', icon: Icons.waves_rounded),
                 const SizedBox(height: 16),
-                Text('Short links.\nFast uploads.',
-                    style: Theme.of(context).textTheme.headlineMedium),
+                Text('Short links.\nFast uploads.', style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 14),
                 const Wrap(
                   spacing: 12,
@@ -79,17 +78,22 @@ class UploadScreen extends ConsumerWidget {
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 260),
                   child: state.file == null
-                      ? _HintPlaceholder(
+                      ? _InfoCard(
                           key: const ValueKey('empty-file'),
                           icon: Icons.folder_open_rounded,
                           title: 'No file selected',
                           subtitle: 'Pick a file to begin.',
                           compact: compact,
                         )
-                      : _SelectedFileCard(
+                      : _InfoCard(
                           key: const ValueKey('selected-file'),
-                          file: state.file!,
+                          icon: Icons.insert_drive_file_rounded,
+                          title: state.file!.name,
+                          subtitle: kIsWeb ? '${(state.file!.size / 1024).toStringAsFixed(1)} KB' : (state.file!.path ?? '${(state.file!.size / 1024).toStringAsFixed(1)} KB'),
                           compact: compact,
+                          iconColor: AppTheme.sky,
+                          iconBgColor: AppTheme.sky.withValues(alpha: 0.15),
+                          cardColor: Colors.white.withValues(alpha: 0.07),
                         ),
                 ),
                 SizedBox(height: compact ? 12 : 16),
@@ -115,7 +119,7 @@ class UploadScreen extends ConsumerWidget {
                   switchInCurve: Curves.easeOutCubic,
                   switchOutCurve: Curves.easeInCubic,
                   child: state.link == null
-                      ? _HintPlaceholder(
+                      ? _InfoCard(
                           key: const ValueKey('empty-link'),
                           icon: Icons.link_off_rounded,
                           title: 'No link yet',
@@ -160,12 +164,7 @@ class UploadScreen extends ConsumerWidget {
                           ],
                         )
                       : Center(
-                          child: SingleChildScrollView(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 620),
-                              child: workspacePanel,
-                            ),
-                          ),
+                          child: workspacePanel,
                         ),
                 ),
               ),
@@ -181,7 +180,6 @@ class UploadScreen extends ConsumerWidget {
 
 class _ChooseFileCard extends StatelessWidget {
   const _ChooseFileCard({required this.onTap, required this.compact});
-
   final Future<void> Function() onTap;
   final bool compact;
 
@@ -201,10 +199,7 @@ class _ChooseFileCard extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.12),
-                Colors.white.withValues(alpha: 0.04),
-              ],
+              colors: [Colors.white.withValues(alpha: 0.12), Colors.white.withValues(alpha: 0.04)],
             ),
           ),
           child: Row(
@@ -214,12 +209,9 @@ class _ChooseFileCard extends StatelessWidget {
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(22),
-                    gradient: const LinearGradient(
-                      colors: [AppTheme.coral, AppTheme.gold, AppTheme.aqua],
-                    ),
+                    gradient: const LinearGradient(colors: [AppTheme.coral, AppTheme.gold, AppTheme.aqua]),
                   ),
-                  child: Icon(Icons.add_photo_alternate_rounded,
-                      color: AppTheme.ink, size: compact ? 24 : 30),
+                  child: Icon(Icons.add_photo_alternate_rounded, color: AppTheme.ink, size: compact ? 24 : 30),
                 ),
               ),
               SizedBox(width: compact ? 14 : 18),
@@ -230,9 +222,7 @@ class _ChooseFileCard extends StatelessWidget {
                     Text('Choose a file', style: Theme.of(context).textTheme.titleMedium),
                     SizedBox(height: compact ? 4 : 6),
                     Text('Tap to browse from your device.',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyMedium),
+                        maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium),
                   ],
                 ),
               ),
@@ -246,52 +236,57 @@ class _ChooseFileCard extends StatelessWidget {
   }
 }
 
-class _SelectedFileCard extends StatelessWidget {
-  const _SelectedFileCard({super.key, required this.file, required this.compact});
+class _InfoCard extends StatelessWidget {
+  const _InfoCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.compact,
+    this.iconColor = Colors.white,
+    this.iconBgColor,
+    this.cardColor,
+  });
 
-  final PlatformFile file;
+  final IconData icon;
+  final String title;
+  final String subtitle;
   final bool compact;
+  final Color iconColor;
+  final Color? iconBgColor;
+  final Color? cardColor;
 
   @override
   Widget build(BuildContext context) {
-    final sizeKb = '${(file.size / 1024).toStringAsFixed(1)} KB';
-    final detail = kIsWeb ? sizeKb : (file.path ?? sizeKb);
-    final iconDim = compact ? 44.0 : 52.0;
-
+    final dim = compact ? 44.0 : 52.0;
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        color: Colors.white.withValues(alpha: 0.07),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        color: cardColor ?? Colors.white.withValues(alpha: 0.05),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Padding(
         padding: EdgeInsets.all(compact ? 14 : 18),
         child: Row(
           children: [
             SizedBox.square(
-              dimension: iconDim,
+              dimension: dim,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(18),
-                  color: AppTheme.sky.withValues(alpha: 0.15),
+                  color: iconBgColor ?? Colors.white.withValues(alpha: 0.08),
                 ),
-                child: const Icon(Icons.insert_drive_file_rounded, color: AppTheme.sky),
+                child: Icon(icon, color: iconColor),
               ),
             ),
-            SizedBox(width: compact ? 12 : 14),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(file.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 4),
-                  Text(detail,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium),
+                  Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),
             ),
@@ -303,12 +298,7 @@ class _SelectedFileCard extends StatelessWidget {
 }
 
 class _ExpirySliderCard extends StatelessWidget {
-  const _ExpirySliderCard({
-    required this.minutes,
-    required this.compact,
-    required this.onChanged,
-  });
-
+  const _ExpirySliderCard({required this.minutes, required this.compact, required this.onChanged});
   final int minutes;
   final bool compact;
   final ValueChanged<int>? onChanged;
@@ -325,12 +315,7 @@ class _ExpirySliderCard extends StatelessWidget {
         border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          compact ? 14 : 18,
-          compact ? 12 : 16,
-          compact ? 14 : 18,
-          compact ? 10 : 14,
-        ),
+        padding: EdgeInsets.fromLTRB(compact ? 14 : 18, compact ? 12 : 16, compact ? 14 : 18, compact ? 10 : 14),
         child: Column(
           children: [
             Row(
@@ -346,17 +331,13 @@ class _ExpirySliderCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: compact ? 12 : 14),
-                Expanded(
-                  child: Text('Link expiry', style: Theme.of(context).textTheme.titleMedium),
-                ),
+                Expanded(child: Text('Link expiry', style: Theme.of(context).textTheme.titleMedium)),
                 const SizedBox(width: 12),
                 DecoratedBox(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(999),
                     color: AppTheme.aqua.withValues(alpha: enabled ? 0.18 : 0.08),
-                    border: Border.all(
-                      color: AppTheme.aqua.withValues(alpha: enabled ? 0.24 : 0.1),
-                    ),
+                    border: Border.all(color: AppTheme.aqua.withValues(alpha: enabled ? 0.24 : 0.1)),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -378,8 +359,7 @@ class _ExpirySliderCard extends StatelessWidget {
                 thumbColor: AppTheme.gold,
                 overlayColor: AppTheme.gold.withValues(alpha: 0.14),
                 valueIndicatorColor: AppTheme.surfaceStrong,
-                valueIndicatorTextStyle:
-                    Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white),
+                valueIndicatorTextStyle: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white),
               ),
               child: Slider(
                 value: minutes.toDouble(),
@@ -395,10 +375,8 @@ class _ExpirySliderCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(_expiryLabel(minLinkExpiryMinutes),
-                      style: Theme.of(context).textTheme.bodyMedium),
-                  Text(_expiryLabel(maxLinkExpiryMinutes),
-                      style: Theme.of(context).textTheme.bodyMedium),
+                  Text(_expiryLabel(minLinkExpiryMinutes), style: Theme.of(context).textTheme.bodyMedium),
+                  Text(_expiryLabel(maxLinkExpiryMinutes), style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),
             ),
@@ -410,13 +388,7 @@ class _ExpirySliderCard extends StatelessWidget {
 }
 
 class _ShareLinkCard extends StatelessWidget {
-  const _ShareLinkCard({
-    super.key,
-    required this.link,
-    required this.expiryMinutes,
-    required this.compact,
-  });
-
+  const _ShareLinkCard({super.key, required this.link, required this.expiryMinutes, required this.compact});
   final String link;
   final int expiryMinutes;
   final bool compact;
@@ -462,8 +434,7 @@ class _ShareLinkCard extends StatelessWidget {
                       Text('Link ready', style: Theme.of(context).textTheme.titleMedium),
                       if (!compact) ...[
                         const SizedBox(height: 4),
-                        Text('Expires in ${_expiryLabel(expiryMinutes)}.',
-                            style: Theme.of(context).textTheme.bodyMedium),
+                        Text('Expires in ${_expiryLabel(expiryMinutes)}.', style: Theme.of(context).textTheme.bodyMedium),
                       ],
                     ],
                   ),
@@ -473,14 +444,9 @@ class _ShareLinkCard extends StatelessWidget {
                   onPressed: () async {
                     await Clipboard.setData(ClipboardData(text: link));
                     if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Share link copied')),
-                    );
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share link copied')));
                   },
-                  style: IconButton.styleFrom(
-                    backgroundColor: AppTheme.aqua,
-                    foregroundColor: AppTheme.ink,
-                  ),
+                  style: IconButton.styleFrom(backgroundColor: AppTheme.aqua, foregroundColor: AppTheme.ink),
                   icon: const Icon(Icons.copy_rounded),
                   tooltip: 'Copy link',
                 ),
@@ -510,67 +476,10 @@ class _ShareLinkCard extends StatelessWidget {
   }
 }
 
-class _HintPlaceholder extends StatelessWidget {
-  const _HintPlaceholder({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.compact,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final dim = compact ? 44.0 : 52.0;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: Colors.white.withValues(alpha: 0.05),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(compact ? 14 : 18),
-        child: Row(
-          children: [
-            SizedBox.square(
-              dimension: dim,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  color: Colors.white.withValues(alpha: 0.08),
-                ),
-                child: Icon(icon, color: Colors.white.withValues(alpha: 0.82)),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: Theme.of(context).textTheme.titleMedium),
-                  SizedBox(height: compact ? 2 : 4),
-                  Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-String _compactLink(String link) {
-  if (link.length <= 52) return link;
-  return '${link.substring(0, 34)}...${link.substring(link.length - 12)}';
-}
+String _compactLink(String link) =>
+    link.length <= 52 ? link : '${link.substring(0, 34)}...${link.substring(link.length - 12)}';
 
 String _expiryLabel(int minutes) =>
     minutes == maxLinkExpiryMinutes ? '1 hr' : '$minutes min';
