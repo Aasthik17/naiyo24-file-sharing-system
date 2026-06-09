@@ -2,9 +2,7 @@
 Upload service — manages upload sessions, coordinates chunk uploads
 with the storage service, and finalizes uploads into the database.
 
-Supports two session backends:
-  - Redis (when REDIS_ENABLED=True) — for production multi-server setups
-  - In-memory dict (when REDIS_ENABLED=False) — for dev/demo single-server
+Uses in-memory dict for session tracking (single-server setup).
 """
 import json
 import time
@@ -32,10 +30,9 @@ logger = get_logger(__name__)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Session Backend — Redis or In-Memory
+# Session Backend — In-Memory
 # ══════════════════════════════════════════════════════════════════════════════
 
-# ── In-Memory Session Store (default for dev) ─────────────────────────────────
 _memory_sessions: Dict[str, dict] = {}
 _memory_session_expiry: Dict[str, float] = {}
 
@@ -53,78 +50,18 @@ def _cleanup_expired_memory_sessions():
         _memory_session_expiry.pop(k, None)
 
 
-# ── Redis Connection (optional) ──────────────────────────────────────────────
-_redis = None
-
-
-async def _get_redis():
-    """Get or create a Redis connection. Returns None if Redis is disabled."""
-    global _redis
-    if not settings.REDIS_ENABLED:
-        return None
-
-    if _redis is None:
-        try:
-            import redis.asyncio as aioredis
-            _redis = aioredis.from_url(
-                settings.REDIS_URL,
-                decode_responses=True,
-                socket_connect_timeout=5,
-                retry_on_timeout=True,
-            )
-            # Test connection
-            await _redis.ping()
-            logger.info("Redis connection established ✓")
-        except Exception as e:
-            logger.warning(f"Redis connection failed, falling back to in-memory: {e}")
-            _redis = None
-            return None
-
-    return _redis
-
-
-# ── Unified Session Operations ────────────────────────────────────────────────
+# ── Session Operations ────────────────────────────────────────────────────────
 async def _save_session(upload_id: str, data: dict, ttl: int):
-    """Save session to Redis or in-memory store."""
-    r = await _get_redis()
+    """Save session to in-memory store."""
     key = _session_key(upload_id)
-
-    if r is not None:
-        try:
-            # Ensure uploaded_chunks is stored as JSON string for Redis
-            save_data = data.copy()
-            if isinstance(save_data.get("uploaded_chunks"), list):
-                save_data["uploaded_chunks"] = json.dumps(save_data["uploaded_chunks"])
-            await r.hset(key, mapping=save_data)
-            await r.expire(key, ttl)
-            return
-        except Exception as e:
-            logger.warning(f"Redis save failed, using in-memory: {e}")
-
-    # Fallback: in-memory
     _cleanup_expired_memory_sessions()
     _memory_sessions[key] = data.copy()
     _memory_session_expiry[key] = time.time() + ttl
 
 
 async def _get_session(upload_id: str) -> Optional[dict]:
-    """Get session from Redis or in-memory store."""
-    r = await _get_redis()
+    """Get session from in-memory store."""
     key = _session_key(upload_id)
-
-    if r is not None:
-        try:
-            session = await r.hgetall(key)
-            if session:
-                # Parse uploaded_chunks from JSON string
-                if "uploaded_chunks" in session and isinstance(session["uploaded_chunks"], str):
-                    session["uploaded_chunks"] = json.loads(session["uploaded_chunks"])
-                return session
-            return None
-        except Exception as e:
-            logger.warning(f"Redis get failed, trying in-memory: {e}")
-
-    # Fallback: in-memory
     _cleanup_expired_memory_sessions()
     session = _memory_sessions.get(key)
     return session.copy() if session else None
@@ -132,21 +69,7 @@ async def _get_session(upload_id: str) -> Optional[dict]:
 
 async def _update_session_field(upload_id: str, field: str, value, ttl: int = None):
     """Update a single field in the session."""
-    r = await _get_redis()
     key = _session_key(upload_id)
-
-    if r is not None:
-        try:
-            if field == "uploaded_chunks" and isinstance(value, list):
-                value = json.dumps(value)
-            await r.hset(key, field, value if not isinstance(value, dict) else json.dumps(value))
-            if ttl:
-                await r.expire(key, ttl)
-            return
-        except Exception as e:
-            logger.warning(f"Redis update failed, using in-memory: {e}")
-
-    # Fallback: in-memory
     if key in _memory_sessions:
         _memory_sessions[key][field] = value
         if ttl:
@@ -155,22 +78,7 @@ async def _update_session_field(upload_id: str, field: str, value, ttl: int = No
 
 async def _update_session_fields(upload_id: str, fields: dict, ttl: int = None):
     """Update multiple fields in the session."""
-    r = await _get_redis()
     key = _session_key(upload_id)
-
-    if r is not None:
-        try:
-            save_fields = fields.copy()
-            if "uploaded_chunks" in save_fields and isinstance(save_fields["uploaded_chunks"], list):
-                save_fields["uploaded_chunks"] = json.dumps(save_fields["uploaded_chunks"])
-            await r.hset(key, mapping=save_fields)
-            if ttl:
-                await r.expire(key, ttl)
-            return
-        except Exception as e:
-            logger.warning(f"Redis update failed, using in-memory: {e}")
-
-    # Fallback: in-memory
     if key in _memory_sessions:
         _memory_sessions[key].update(fields)
         if ttl:
@@ -178,18 +86,8 @@ async def _update_session_fields(upload_id: str, fields: dict, ttl: int = None):
 
 
 async def _delete_session(upload_id: str):
-    """Delete a session from Redis or in-memory store."""
-    r = await _get_redis()
+    """Delete a session from in-memory store."""
     key = _session_key(upload_id)
-
-    if r is not None:
-        try:
-            await r.delete(key)
-            return
-        except Exception as e:
-            logger.warning(f"Redis delete failed, using in-memory: {e}")
-
-    # Fallback: in-memory
     _memory_sessions.pop(key, None)
     _memory_session_expiry.pop(key, None)
 
