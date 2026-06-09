@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
@@ -20,13 +19,11 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@db:5432/filesharingsystem"
 
-    # Redis (optional — set REDIS_ENABLED=True to use Redis for upload sessions)
-    REDIS_ENABLED: bool = False
-    REDIS_HOST: str = "redis"
-    REDIS_PORT: int = 6379
-    REDIS_URL: str = "redis://redis:6379/0"
-    CELERY_BROKER_URL: str = "redis://redis:6379/1"
-    CELERY_RESULT_BACKEND: str = "redis://redis:6379/1"
+
+    # Public URL (used in share links so they're reachable from other devices)
+    # Set this to your machine's LAN IP or public domain, e.g. "http://192.168.1.5:8000"
+    # Leave empty to auto-detect LAN IP at startup.
+    PUBLIC_BASE_URL: str = ""
 
     # Local File Storage
     UPLOAD_DIR: str = "./uploads"
@@ -36,12 +33,6 @@ class Settings(BaseSettings):
     CHUNK_SIZE_BYTES: int = 5242880          # 5 MB
     SHARE_LINK_EXPIRY_HOURS: int = 72
     UPLOAD_SESSION_TTL_SECONDS: int = 3600
-
-    # Public URL — used to build share links instead of the raw request IP.
-    # Set this to your machine's mDNS name or any publicly reachable hostname.
-    # Example: http://Aasthiks-MacBook-Air.local:8000
-    # Leave unset to fall back to the request's host (default behaviour).
-    PUBLIC_BASE_URL: Optional[str] = None
 
     class Config:
         env_file = ".env"
@@ -54,3 +45,26 @@ def get_settings() -> Settings:
 
 
 settings = get_settings()
+
+
+def get_public_base_url(fallback_port: int = 8000) -> str:
+    """
+    Return the public base URL for share links.
+    Priority:
+      1. PUBLIC_BASE_URL from .env / config
+      2. Auto-detected LAN IP with the given port
+      3. Fallback to http://127.0.0.1:{port}
+    """
+    if settings.PUBLIC_BASE_URL:
+        return settings.PUBLIC_BASE_URL.rstrip("/")
+
+    import socket
+    try:
+        # Create a UDP socket to determine outbound LAN IP (no data is sent)
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        lan_ip = s.getsockname()[0]
+        s.close()
+        return f"http://{lan_ip}:{fallback_port}"
+    except Exception:
+        return f"http://127.0.0.1:{fallback_port}"
