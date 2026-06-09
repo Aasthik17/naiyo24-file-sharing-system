@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
+// ── Layout ───────────────────────────────────────────────────────────────────
+
 class AuroraScaffold extends StatelessWidget {
   const AuroraScaffold({super.key, required this.child});
   final Widget child;
@@ -34,8 +36,7 @@ class FrostPanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(radius),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            padding: padding,
+          child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(radius),
               border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
@@ -55,11 +56,13 @@ class FrostPanel extends StatelessWidget {
                 ),
               ],
             ),
-            child: child,
+            child: Padding(padding: padding, child: child),
           ),
         ),
       );
 }
+
+// ── Components ───────────────────────────────────────────────────────────────
 
 enum AppPillTone { coral, aqua, ink, custom }
 
@@ -84,35 +87,37 @@ class AppPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = customColors ?? switch (tone) {
-      AppPillTone.coral => [AppTheme.coral, AppTheme.gold],
-      AppPillTone.aqua => [AppTheme.aqua, AppTheme.sky],
-      AppPillTone.ink => [const Color(0xFF28425E), const Color(0xFF1B2F44)],
+      AppPillTone.coral  => [AppTheme.coral, AppTheme.gold],
+      AppPillTone.aqua   => [AppTheme.aqua, AppTheme.sky],
+      AppPillTone.ink    => [const Color(0xFF28425E), const Color(0xFF1B2F44)],
       AppPillTone.custom => [Colors.white, Colors.white],
     };
-
     final contentColor = tone == AppPillTone.ink ? Colors.white : AppTheme.ink;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(radius),
         gradient: LinearGradient(colors: colors),
         boxShadow: boxShadow,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 15, color: contentColor),
-            const SizedBox(width: 8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 15, color: contentColor),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              label,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(color: contentColor),
+            ),
           ],
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: contentColor,
-                ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -169,10 +174,9 @@ class GradientButton extends StatelessWidget {
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 220),
           child: isLoading
-              ? const SizedBox(
+              ? const SizedBox.square(
                   key: ValueKey('loading'),
-                  width: 22,
-                  height: 22,
+                  dimension: 22,
                   child: CircularProgressIndicator(strokeWidth: 2.2),
                 )
               : Row(
@@ -185,9 +189,10 @@ class GradientButton extends StatelessWidget {
                     ],
                     Text(
                       label,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: AppTheme.ink,
-                          ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(color: AppTheme.ink),
                     ),
                   ],
                 ),
@@ -198,11 +203,7 @@ class GradientButton extends StatelessWidget {
 }
 
 class BrandWordmark extends StatelessWidget {
-  const BrandWordmark({
-    super.key,
-    required this.title,
-    required this.subtitle,
-  });
+  const BrandWordmark({super.key, required this.title, required this.subtitle});
 
   final String title;
   final String subtitle;
@@ -212,25 +213,26 @@ class BrandWordmark extends StatelessWidget {
     final theme = Theme.of(context);
     return Row(
       children: [
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppTheme.coral, AppTheme.gold, AppTheme.aqua],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.coral.withValues(alpha: 0.24),
-                blurRadius: 18,
-                offset: const Offset(0, 12),
+        SizedBox.square(
+          dimension: 46,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppTheme.coral, AppTheme.gold, AppTheme.aqua],
               ),
-            ],
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.coral.withValues(alpha: 0.24),
+                  blurRadius: 18,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.cloud_upload_rounded, color: AppTheme.ink),
           ),
-          child: const Icon(Icons.cloud_upload_rounded, color: AppTheme.ink),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -238,57 +240,21 @@ class BrandWordmark extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleLarge,
-              ),
+              Text(title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleLarge),
               const SizedBox(height: 2),
-              Text(
-                subtitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyMedium,
-              ),
+              Text(subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium),
             ],
           ),
         ),
       ],
     );
   }
-}
-
-class BrandTextField extends StatelessWidget {
-  const BrandTextField({
-    super.key,
-    required this.controller,
-    required this.label,
-    required this.icon,
-    this.keyboardType,
-    this.obscureText = false,
-    this.suffixIcon,
-  });
-
-  final TextEditingController controller;
-  final String label;
-  final IconData icon;
-  final TextInputType? keyboardType;
-  final bool obscureText;
-  final Widget? suffixIcon;
-
-  @override
-  Widget build(BuildContext context) => TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        obscureText: obscureText,
-        style: Theme.of(context).textTheme.bodyLarge,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon),
-          suffixIcon: suffixIcon,
-        ),
-      );
 }
 
 class InfoBanner extends StatelessWidget {
@@ -304,25 +270,29 @@ class InfoBanner extends StatelessWidget {
   final Color backgroundColor;
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+  Widget build(BuildContext context) => DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           color: backgroundColor,
           border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: Colors.white),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                message,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: Colors.white),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  message,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: Colors.white),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
 }
@@ -333,13 +303,11 @@ class TransferIllustration extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primaryOrbSize = height * 0.78;
-    final secondaryOrbSize = height * 0.64;
-    final showcaseCardSize = height * 0.58;
-    final showcaseCardRadius = showcaseCardSize * 0.24;
-    final iconBoxSize = showcaseCardSize * 0.38;
-    final lineHeight = showcaseCardSize * 0.07;
-    final contentGap = showcaseCardSize * 0.08;
+    final card   = height * 0.58;
+    final r      = card * 0.24;
+    final icon   = card * 0.38;
+    final line   = card * 0.07;
+    final gap    = card * 0.08;
 
     return SizedBox(
       height: height,
@@ -347,132 +315,107 @@ class TransferIllustration extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           _GlowOrb(
-            size: primaryOrbSize,
-            colors: [
-              AppTheme.aqua.withValues(alpha: 0.42),
-              AppTheme.sky.withValues(alpha: 0.18),
-            ],
+            size: height * 0.78,
+            colors: [AppTheme.aqua.withValues(alpha: 0.42), AppTheme.sky.withValues(alpha: 0.18)],
           ),
-          Container(
-            width: secondaryOrbSize,
-            height: secondaryOrbSize,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          SizedBox.square(
+            dimension: height * 0.64,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              ),
             ),
           ),
           Positioned(
-            left: 12,
-            top: 28,
+            left: 12, top: 28,
             child: AppPill(
               label: 'Private',
               icon: Icons.lock_rounded,
               customColors: const [AppTheme.sky, AppTheme.aqua],
               radius: 18,
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.sky.withValues(alpha: 0.18),
-                  blurRadius: 18,
-                  offset: const Offset(0, 10),
-                )
-              ],
+              boxShadow: [BoxShadow(color: AppTheme.sky.withValues(alpha: 0.18), blurRadius: 18, offset: const Offset(0, 10))],
             ),
           ),
           Positioned(
-            right: 4,
-            top: 72,
+            right: 4, top: 72,
             child: AppPill(
               label: 'Fast',
               icon: Icons.flash_on_rounded,
               customColors: const [AppTheme.coral, AppTheme.gold],
               radius: 18,
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.coral.withValues(alpha: 0.18),
-                  blurRadius: 18,
-                  offset: const Offset(0, 10),
-                )
-              ],
+              boxShadow: [BoxShadow(color: AppTheme.coral.withValues(alpha: 0.18), blurRadius: 18, offset: const Offset(0, 10))],
             ),
           ),
           Positioned(
-            right: 18,
-            bottom: 18,
+            right: 18, bottom: 18,
             child: AppPill(
               label: 'Short link',
               icon: Icons.link_rounded,
               customColors: const [AppTheme.gold, AppTheme.aqua],
               radius: 18,
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.gold.withValues(alpha: 0.18),
-                  blurRadius: 18,
-                  offset: const Offset(0, 10),
-                )
-              ],
+              boxShadow: [BoxShadow(color: AppTheme.gold.withValues(alpha: 0.18), blurRadius: 18, offset: const Offset(0, 10))],
             ),
           ),
           Transform.rotate(
             angle: -0.16,
-            child: Container(
-              width: showcaseCardSize,
-              height: showcaseCardSize,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(showcaseCardRadius),
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppTheme.coral, AppTheme.gold, AppTheme.aqua],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.coral.withValues(alpha: 0.22),
-                    blurRadius: 28,
-                    offset: const Offset(0, 18),
-                  ),
-                ],
-              ),
-              child: Container(
-                margin: const EdgeInsets.all(3),
+            child: SizedBox.square(
+              dimension: card,
+              child: DecoratedBox(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(showcaseCardRadius - 3),
-                  color: const Color(0xFF0E1B29),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: iconBoxSize,
-                      height: iconBoxSize,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(iconBoxSize * 0.3),
-                        gradient: const LinearGradient(colors: [AppTheme.coral, AppTheme.gold]),
-                      ),
-                      child: Icon(
-                        Icons.file_present_rounded,
-                        size: showcaseCardSize * 0.19,
-                        color: AppTheme.ink,
-                      ),
-                    ),
-                    SizedBox(height: contentGap),
-                    Container(
-                      width: showcaseCardSize * 0.58,
-                      height: lineHeight,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                    ),
-                    SizedBox(height: contentGap * 0.55),
-                    Container(
-                      width: showcaseCardSize * 0.42,
-                      height: lineHeight,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
-                        color: Colors.white.withValues(alpha: 0.06),
-                      ),
-                    ),
+                  borderRadius: BorderRadius.circular(r),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppTheme.coral, AppTheme.gold, AppTheme.aqua],
+                  ),
+                  boxShadow: [
+                    BoxShadow(color: AppTheme.coral.withValues(alpha: 0.22), blurRadius: 28, offset: const Offset(0, 18)),
                   ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(3),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(r - 3),
+                      color: const Color(0xFF0E1B29),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox.square(
+                          dimension: icon,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(icon * 0.3),
+                              gradient: const LinearGradient(colors: [AppTheme.coral, AppTheme.gold]),
+                            ),
+                            child: Icon(Icons.file_present_rounded, size: card * 0.19, color: AppTheme.ink),
+                          ),
+                        ),
+                        SizedBox(height: gap),
+                        SizedBox(
+                          width: card * 0.58, height: line,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(999),
+                              color: Colors.white.withValues(alpha: 0.1),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: gap * 0.55),
+                        SizedBox(
+                          width: card * 0.42, height: line,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(999),
+                              color: Colors.white.withValues(alpha: 0.06),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -483,172 +426,7 @@ class TransferIllustration extends StatelessWidget {
   }
 }
 
-class AuthScaffold extends StatelessWidget {
-  const AuthScaffold({
-    super.key,
-    required this.title,
-    required this.highlights,
-    required this.form,
-    this.badge = 'Secure access',
-    this.heroTitle = '',
-  });
-
-  final String badge;
-  final String title;
-  final String heroTitle;
-  final List<String> highlights;
-  final Widget form;
-
-  @override
-  Widget build(BuildContext context) {
-    final viewInsets = MediaQuery.viewInsetsOf(context);
-
-    return AuroraScaffold(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth >= 930;
-          final keyboardVisible = viewInsets.bottom > 0;
-          final isShort = (constraints.maxHeight + viewInsets.bottom) < 700;
-          final artHeight = isWide
-              ? (constraints.maxHeight * 0.34).clamp(150.0, 220.0)
-              : (constraints.maxHeight * 0.16).clamp(88.0, 112.0);
-
-          final hero = Padding(
-            padding: EdgeInsets.all(isWide ? 8 : 0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: isWide ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-              children: [
-                const BrandWordmark(
-                  title: 'Naiyo24 Transfer',
-                  subtitle: 'Fast, visual, secure sharing',
-                ),
-                SizedBox(height: isWide ? 26 : 18),
-                TransferIllustration(height: artHeight),
-                if (heroTitle.isNotEmpty) ...[
-                  SizedBox(height: isWide ? 20 : 12),
-                  Text(
-                    heroTitle,
-                    maxLines: isWide ? 2 : 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: isWide ? TextAlign.start : TextAlign.center,
-                    style: isWide
-                        ? Theme.of(context).textTheme.headlineMedium
-                        : Theme.of(context).textTheme.titleLarge,
-                  ),
-                ],
-                if (highlights.isNotEmpty) ...[
-                  SizedBox(height: isWide ? 18 : 12),
-                  Wrap(
-                    alignment: isWide ? WrapAlignment.start : WrapAlignment.center,
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      for (final item in highlights.take(isWide ? 3 : 2))
-                        AppPill(
-                          label: item,
-                          tone: item.contains('Fast') ? AppPillTone.coral : AppPillTone.aqua,
-                        ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          );
-
-          final formPanel = FrostPanel(
-            padding: EdgeInsets.fromLTRB(24, isWide ? 26 : 22, 24, isWide ? 28 : 22),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (!isWide && isShort) ...[
-                  const BrandWordmark(
-                    title: 'Naiyo24 Transfer',
-                    subtitle: 'Fast, visual, secure sharing',
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                AppPill(
-                  label: badge,
-                  icon: Icons.auto_awesome_rounded,
-                  tone: AppPillTone.ink,
-                ),
-                const SizedBox(height: 16),
-                Text(title, style: Theme.of(context).textTheme.headlineLarge),
-                const SizedBox(height: 22),
-                form,
-              ],
-            ),
-          );
-
-          final horizontalPadding = isWide ? 36.0 : 18.0;
-          final verticalPadding = isWide ? 24.0 : 16.0;
-
-          return Padding(
-            padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: isWide ? 1120 : 520),
-                child: isWide
-                    ? Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(flex: 10, child: hero),
-                          const SizedBox(width: 22),
-                          Expanded(flex: 9, child: Center(child: formPanel)),
-                        ],
-                      )
-                    : SingleChildScrollView(
-                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minHeight: (constraints.maxHeight - (verticalPadding * 2)).clamp(0.0, double.infinity),
-                          ),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: Column(
-                              mainAxisAlignment: keyboardVisible ? MainAxisAlignment.start : MainAxisAlignment.center,
-                              children: [
-                                if (!isShort) hero,
-                                if (!isShort) const SizedBox(height: 16),
-                                formPanel,
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class LoadingView extends StatelessWidget {
-  const LoadingView({super.key});
-
-  @override
-  Widget build(BuildContext context) => const AuroraScaffold(
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                BrandWordmark(title: 'Naiyo24 Transfer', subtitle: 'Preparing your workspace'),
-                SizedBox(height: 28),
-                TransferIllustration(height: 210),
-                SizedBox(height: 24),
-                CircularProgressIndicator(),
-              ],
-            ),
-          ),
-        ),
-      );
-}
+// ── Background ────────────────────────────────────────────────────────────────
 
 class _AuroraBackdrop extends StatelessWidget {
   const _AuroraBackdrop();
@@ -667,33 +445,19 @@ class _AuroraBackdrop extends StatelessWidget {
             child: SizedBox.expand(),
           ),
           Positioned(
-            top: -120,
-            left: -90,
-            child: _GlowOrb(
-              size: 290,
-              colors: [AppTheme.coral.withValues(alpha: 0.9), AppTheme.gold.withValues(alpha: 0.45)],
-            ),
+            top: -120, left: -90,
+            child: _GlowOrb(size: 290, colors: [AppTheme.coral.withValues(alpha: 0.9), AppTheme.gold.withValues(alpha: 0.45)]),
           ),
           Positioned(
-            top: 120,
-            right: -90,
-            child: _GlowOrb(
-              size: 260,
-              colors: [AppTheme.sky.withValues(alpha: 0.85), AppTheme.aqua.withValues(alpha: 0.42)],
-            ),
+            top: 120, right: -90,
+            child: _GlowOrb(size: 260, colors: [AppTheme.sky.withValues(alpha: 0.85), AppTheme.aqua.withValues(alpha: 0.42)]),
           ),
           Positioned(
-            bottom: -160,
-            left: 40,
-            child: _GlowOrb(
-              size: 320,
-              colors: [AppTheme.aqua.withValues(alpha: 0.7), AppTheme.sky.withValues(alpha: 0.28)],
-            ),
+            bottom: -160, left: 40,
+            child: _GlowOrb(size: 320, colors: [AppTheme.aqua.withValues(alpha: 0.7), AppTheme.sky.withValues(alpha: 0.28)]),
           ),
           Positioned.fill(
-            child: IgnorePointer(
-              child: CustomPaint(painter: _MeshPainter()),
-            ),
+            child: IgnorePointer(child: CustomPaint(painter: _MeshPainter())),
           ),
         ],
       );
@@ -705,13 +469,14 @@ class _GlowOrb extends StatelessWidget {
   final List<Color> colors;
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [colors.first, colors.last, Colors.transparent],
+  Widget build(BuildContext context) => SizedBox.square(
+        dimension: size,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [colors.first, colors.last, Colors.transparent],
+            ),
           ),
         ),
       );
@@ -720,46 +485,45 @@ class _GlowOrb extends StatelessWidget {
 class _MeshPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    final w = size.width;
+    final h = size.height;
+
+    final stroke = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
       ..color = Colors.white.withValues(alpha: 0.04);
 
-    final width = size.width;
-    final height = size.height;
-
     canvas.drawPath(
       Path()
-        ..moveTo(width * 0.05, height * 0.28)
-        ..quadraticBezierTo(width * 0.28, height * 0.14, width * 0.56, height * 0.24)
-        ..quadraticBezierTo(width * 0.82, height * 0.34, width * 0.96, height * 0.16),
-      paint,
+        ..moveTo(w * 0.05, h * 0.28)
+        ..quadraticBezierTo(w * 0.28, h * 0.14, w * 0.56, h * 0.24)
+        ..quadraticBezierTo(w * 0.82, h * 0.34, w * 0.96, h * 0.16),
+      stroke,
     );
-
     canvas.drawPath(
       Path()
-        ..moveTo(width * 0.02, height * 0.82)
-        ..quadraticBezierTo(width * 0.28, height * 0.72, width * 0.44, height * 0.84)
-        ..quadraticBezierTo(width * 0.74, height * 1.02, width * 0.98, height * 0.78),
-      paint,
+        ..moveTo(w * 0.02, h * 0.82)
+        ..quadraticBezierTo(w * 0.28, h * 0.72, w * 0.44, h * 0.84)
+        ..quadraticBezierTo(w * 0.74, h * 1.02, w * 0.98, h * 0.78),
+      stroke,
     );
 
-    final dashPaint = Paint()
+    final dot = Paint()
       ..style = PaintingStyle.fill
       ..color = Colors.white.withValues(alpha: 0.06);
 
-    for (final point in [
-      Offset(width * 0.12, height * 0.18),
-      Offset(width * 0.35, height * 0.22),
-      Offset(width * 0.78, height * 0.32),
-      Offset(width * 0.18, height * 0.78),
-      Offset(width * 0.66, height * 0.86),
-      Offset(width * 0.88, height * 0.7),
+    for (final p in [
+      Offset(w * 0.12, h * 0.18),
+      Offset(w * 0.35, h * 0.22),
+      Offset(w * 0.78, h * 0.32),
+      Offset(w * 0.18, h * 0.78),
+      Offset(w * 0.66, h * 0.86),
+      Offset(w * 0.88, h * 0.70),
     ]) {
-      canvas.drawCircle(point, 2.2, dashPaint);
+      canvas.drawCircle(p, 2.2, dot);
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter _) => false;
 }
