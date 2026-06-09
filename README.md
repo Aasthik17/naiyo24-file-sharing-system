@@ -140,7 +140,7 @@ flutter run -d macos        # macOS desktop
 flutter run -d android      # Android device/emulator
 ```
 
-> **Note:** The app points to your backend host. Update the base URL in `lib/services/api_service.dart` if running on a physical device (replace `localhost` with your machine's local IP, e.g. `192.168.1.x`).
+> **Note:** To run on a physical Android device, you must set your machine's LAN IP when running the app so it can reach your backend. For example: `flutter run --dart-define=API_BASE_URL=http://192.168.1.x:8000`
 
 ---
 
@@ -175,6 +175,11 @@ DEBUG=true
 
 # Database
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/filesharingsystem
+
+# Public URL (For share links)
+# Set to http://localhost:8000 for PC testing.
+# Set to your LAN IP (e.g. http://192.168.1.x:8000) to open links on mobile devices.
+PUBLIC_BASE_URL=http://localhost:8000
 ```
 
 ---
