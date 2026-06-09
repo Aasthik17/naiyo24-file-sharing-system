@@ -78,9 +78,18 @@ class FileNotifier extends StateNotifier<FileState> {
       );
 
       state = state.copyWith(loading: false, link: link);
+    } on Exception catch (e) {
+      // Strip the "Exception: " prefix for a cleaner UI message
+      final raw = e.toString();
+      final msg = raw.startsWith('Exception: ') ? raw.substring(11) : raw;
+      state = state.copyWith(loading: false, errorMessage: msg);
+      debugPrint('Upload failed: $e');
     } catch (e) {
-      state = state.copyWith(loading: false, errorMessage: "Upload failed: ${e.toString()}");
-      print("Upload failed: $e");
+      state = state.copyWith(
+        loading: false,
+        errorMessage: 'Unexpected error: $e',
+      );
+      debugPrint('Upload failed (unknown): $e');
     }
   }
 }

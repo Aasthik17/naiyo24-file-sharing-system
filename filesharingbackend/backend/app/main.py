@@ -79,13 +79,24 @@ app = FastAPI(
 )
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
+# In DEBUG mode: allow all localhost / LAN origins so the Flutter web app
+# (served on e.g. http://localhost:52xxx) can reach the backend without CORS
+# errors. In production: restrict to the real domain.
+_DEBUG_ORIGINS = [
+    "http://localhost",
+    "http://127.0.0.1",
+    # Flutter web dev server uses a random high port — cover the full range
+    *[f"http://localhost:{p}" for p in range(3000, 65536)],
+    *[f"http://127.0.0.1:{p}" for p in range(3000, 65536)],
+]
+
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=_DEBUG_ORIGINS if settings.DEBUG else ["https://yourdomain.com"],
     allow_origin_regex=(
-        r"http://(localhost|127\.0\.0\.1)(:\d+)?$"
-        r"|http://(192\.168|10\.|172\.(1[6-9]|2\d|3[01]))\.\d+\.\d+(:\d+)?$"
+        # Also allow any LAN IP (192.168.x.x / 10.x / 172.16-31.x) on any port
+        r"http://(192\.168|10\.|172\.(1[6-9]|2\d|3[01]))\.\d+\.\d+(:\d+)?$"
     ) if settings.DEBUG else None,
-    allow_origins=["null"] if settings.DEBUG else ["https://yourdomain.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
